@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AR WhatsApp Group Message Forwarder</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#111c2f; --panel2:#16243a; --line:#22344f;
+    --text:#e8eef7; --muted:#8ea3bf; --green:#22c55e; --green-d:#15803d;
+    --amber:#f59e0b; --red:#ef4444; --blue:#3b82f6; --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  header{display:flex;align-items:center;gap:12px;flex-wrap:nowrap;padding:12px 20px;background:linear-gradient(90deg,#0d1a2e,#123253);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#0ea5e9);display:grid;place-items:center;font-weight:800;color:#04121f;font-size:15px}
+  h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.2px}
+  .sub{font-size:11.5px;color:var(--muted)}
+  .spacer{flex:1}
+  .zoomgroup{display:flex;align-items:center;gap:4px;background:#0d1a2e;border:1px solid var(--line);border-radius:999px;padding:3px 6px}
+  .zbtn{background:transparent;color:#c9d8ea;border:1px solid transparent;border-radius:7px;padding:3px 8px;font-size:12px;font-weight:700;cursor:pointer}
+  .zbtn:hover{background:#1d2f4a;border-color:var(--line)}
+  .zbtn.reset{font-size:11px;font-weight:600;color:var(--muted)}
+  .zoomlabel{font-size:11.5px;color:var(--muted);min-width:38px;text-align:center}
+  .pill{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;font-size:11.5px;font-weight:600;border:1px solid var(--line);background:#0d1a2e;white-space:nowrap}
+  .dot{width:8px;height:8px;border-radius:50%;background:#64748b}
+  .dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+  .dot.warn{background:var(--amber)}
+  .dot.err{background:var(--red)}
+  main{display:flex;flex-direction:column;gap:12px;padding:14px 20px 32px;max-width:1180px;margin:0 auto}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+  .card h2{font-size:13px;margin:0 0 10px;color:#c9d8ea;text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
+  select,input[type=text],input[type=time],input[type=number],textarea{
+    width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none}
+  select:focus,input:focus,textarea:focus{border-color:var(--blue)}
+  button{cursor:pointer;border:0;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;font-family:inherit;transition:.15s}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .btn-primary{background:var(--green);color:#052012}
+  .btn-primary:hover:not(:disabled){background:#16a34a}
+  .btn-ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+  .btn-ghost:hover:not(:disabled){background:#1d2f4a}
+  .btn-danger{background:#3b1219;color:#ffb4b4;border:1px solid #5b1d26}
+  .field{margin-bottom:10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .qrbox{display:grid;place-items:center;background:#fff;border-radius:12px;padding:10px;width:230px;min-height:0}
+  .qrbox .ph{padding:14px 8px}
+  .qrbox img{width:210px;height:210px;display:block}
+  .qrbox .ph{color:#64748b;font-size:12px;text-align:center;padding:30px 12px}
+  .statusline{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+  .statusline.tight{margin-top:6px;line-height:1.45}
+  .list{max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:9px;background:var(--panel2)}
+  .item{display:flex;align-items:center;gap:9px;padding:9px 11px;border-bottom:1px solid #1c2b42;font-size:13px;width:100%}
+  .item:last-child{border-bottom:0}
+  .item input{width:15px;height:15px;accent-color:var(--green)}
+  .item .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tag{font-size:10.5px;padding:2px 7px;border-radius:6px;background:#1e3a5f;color:#9fc6f5;font-weight:600}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .statrow{display:flex;flex-direction:column;gap:9px}
+  .statrow button{width:100%;text-align:center}
+  .statrow .stat{display:flex;align-items:center;justify-content:space-between;padding:9px 13px}
+  .statrow .stat b{font-size:19px}
+  .statrow .stat span{font-size:12px}
+  .optlist{display:flex;flex-direction:column;gap:0}
+  .optlist .item{cursor:pointer}
+  .optlist .item:hover{background:#1b2b44}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+  .stat b{display:block;font-size:20px;color:#fff}
+  .stat span{font-size:11px;color:var(--muted)}
+  #log{height:230px;overflow:auto;background:#080f1a;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-family:Consolas,monospace;font-size:11.5px;line-height:1.65}
+  #log div{white-space:pre-wrap;word-break:break-word}
+  .l-info{color:#9fd7b4}.l-warn{color:#f3cf7a}.l-err{color:#ff9b9b}
+  .hist{max-height:260px;overflow:auto}
+  .hitem{border-bottom:1px solid #1c2b42;padding:9px 2px;font-size:12.5px}
+  .hitem .t{color:var(--muted);font-size:11px;margin-bottom:4px}
+  .hitem .txt{white-space:pre-wrap;word-break:break-word;color:#dbe7f5;max-height:66px;overflow:hidden}
+  .ok{color:var(--green);font-weight:700}.fail{color:var(--red);font-weight:700}
+  .warnbox{background:#2a1f0a;border:1px solid #5a4310;color:#f5d08a;border-radius:9px;padding:8px 11px;font-size:12px;line-height:1.45;margin-bottom:10px}
+  .full{grid-column:1/-1}
+  textarea{resize:vertical;min-height:64px}
+  
+  .hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+  .aboutcard{background:linear-gradient(160deg,#122540,#0e1a2c);border-color:#24405f}
+  .abouthead{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+  .logo.big{width:52px;height:52px;border-radius:14px;font-size:17px;flex:none}
+  .abouttitle{font-size:15px;margin:0;color:#fff;letter-spacing:.5px}
+  .aboutsub{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .aboutgrid{display:flex;flex-direction:column;gap:8px}
+  .aboutrow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0e1c2e;border:1px solid var(--line);border-radius:10px;padding:10px 13px}
+  .alabel{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+  .avalue{font-size:13.5px;color:#e8eef7;font-weight:600;text-decoration:none;word-break:break-all;text-align:right}
+  a.avalue:hover{color:#7dd3fc;text-decoration:underline}
+  .aboutfoot{font-size:11.5px;color:var(--muted);text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .split{display:flex;flex-direction:column;gap:10px}
+  .split>*{flex:none;width:100%}
+  .qrwrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">AR</div>
+  <div>
+    <h1>AR WA GROUP MESSAGE FORWARD</h1>
+    <div class="sub">Source group → many target groups · text only · original message unchanged</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="zoomgroup">
+    <button class="zbtn" id="zoomOut" title="Zoom out (Ctrl -)">A−</button>
+    <span class="zoomlabel" id="zoomLabel">100%</span>
+    <button class="zbtn" id="zoomIn" title="Zoom in (Ctrl +)">A+</button>
+    <button class="zbtn reset" id="zoomReset" title="Reset to 100% (Ctrl 0)">Reset</button>
+  </div>
+  <div class="pill"><span class="dot" id="waDot"></span><span id="waText">WhatsApp: not connected</span></div>
+  <div class="pill"><span class="dot" id="schedDot"></span><span id="schedText">Schedule 09:50 – 16:28</span></div>
+</header>
+
+<main>
+  <!-- 1: connection -->
+  <section>
+    <div class="card">
+      <h2>1 · WhatsApp connection</h2>
+      <div class="split">
+        <div>
+          <div class="statrow" style="margin-bottom:10px">
+            <button class="btn-primary" id="btnConnect">Connect WhatsApp</button>
+            <button class="btn-ghost" id="btnLogout">Disconnect</button>
+          </div>
+          <div class="statusline tight" id="waStatusLine">Click <b>Connect WhatsApp</b>, then scan the QR code with your phone
+            (WhatsApp → Linked devices → Link a device).<br>Your login is stored on this PC, so next time it connects automatically.</div>
+        </div>
+        <div class="qrwrap">
+          <div class="qrbox" id="qrBox"><div class="ph">QR code will appear here</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2 · Groups</h2>
+      <div class="warnbox">Messages are forwarded <b>exactly as received</b> — no added text, no prefix, no change to emoji, numbers or line breaks. Images, PDFs, videos, audio and stickers are <b>never</b> forwarded.</div>
+      <div class="field">
+        <label>Source group (read messages from)</label>
+        <select id="sourceSel"><option value="">— connect WhatsApp first —</option></select>
+      </div>
+      <div class="field">
+        <label>Target groups (send to) &nbsp;<span id="targetCount" class="tag">0 selected</span></label>
+        <div class="list" id="targetList"><div class="item" style="color:var(--muted)">— connect WhatsApp first —</div></div>
+      </div>
+      <div class="row" style="margin-top:4px">
+        <button class="btn-ghost" id="btnReload">Reload group list</button>
+        <button class="btn-primary" id="btnSaveGroups">Save groups</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3 · Schedule &amp; safety</h2>
+      <div class="field"><label>Start time (24h)</label><input type="time" id="startTime" value="09:50"></div>
+      <div class="field"><label>End time (24h)</label><input type="time" id="endTime" value="16:28"></div>
+      <div class="field"><label>Delay between groups (sec)</label><input type="number" id="delay" min="0" max="120" value="3"></div>
+      <div class="field"><label>Daily limit (0 = unlimited)</label><input type="number" id="dailyLimit" min="0" value="0"></div>
+      <div class="field"><button class="btn-primary" id="btnSaveSchedule" style="width:100%">Save settings</button></div>
+      <div class="hint">Forwarding runs every day only between the start and end time. A message arriving outside that window is not sent.</div>
+    </div>
+  </section>
+
+  <!-- 2: today / history / test -->
+  <section>
+    <div class="card">
+      <h2>2 · Today</h2>
+      <div class="statrow">
+        <div class="stat"><b id="stFwd">0</b><span>sent</span></div>
+        <div class="stat"><b id="stFail">0</b><span>failed</span></div>
+        <div class="stat"><b id="stSkip">0</b><span>skipped</span></div>
+        <div class="stat"><b id="stLast">—</b><span>last forward</span></div>
+      </div>
+      <div class="statrow" style="margin-top:12px">
+        <button class="btn-ghost" id="btnRecheck">Check now (why not forwarding?)</button>
+        <button class="btn-ghost" id="btnResetStats">Reset counters</button>
+        <button class="btn-ghost" id="btnLogFile">Open log file</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3 · Forward history</h2>
+      <div class="hist" id="hist"><div class="hint">Nothing forwarded yet.</div></div>
+      <div class="statrow" style="margin-top:10px"><button class="btn-ghost" id="btnClearHist">Clear history</button></div>
+    </div>
+
+    <div class="card">
+      <h2>4 · Test send</h2>
+      <textarea id="testText" placeholder="Type a test message (sent as-is to the selected target groups)"></textarea>
+      <div class="statrow" style="margin-top:9px">
+        <button class="btn-ghost" id="btnTest">Send test message</button>
+        <span class="hint" id="testMsg"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>5 · Activity log</h2>
+      <div id="log"></div>
+    </div>
+  </section>
+  <!-- 6: about -->
+  <section>
+    <div class="card aboutcard">
+      <div class="abouthead">
+        <div class="logo big">AR</div>
+        <div>
+          <h2 class="abouttitle">AR WA GROUP MESSAGE FORWARD</h2>
+          <div class="aboutsub">A smart and efficient WhatsApp Group Message Forwarding Software.</div>
+        </div>
+      </div>
+      <div class="aboutgrid">
+        <div class="aboutrow"><span class="alabel">Developed by</span><span class="avalue">Ariful Islam</span></div>
+        <div class="aboutrow"><span class="alabel">Phone</span><a class="avalue" href="tel:+8801307432200">+880 1307-432200</a></div>
+        <div class="aboutrow"><span class="alabel">Email</span><a class="avalue" href="mailto:arifulislam4390@gmail.com">arifulislam4390@gmail.com</a></div>
+        <div class="aboutrow"><span class="alabel">Version</span><span class="avalue" id="aboutVersion">1.5.0</span></div>
+      </div>
+      <div class="aboutfoot">© <span id="aboutYear">2026</span> Ariful Islam · All rights reserved.</div>
+    </div>
+  </section>
+</main>
+
+<script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "ar-whatsapp-forwarder",
+  "productName": "AR WhatsApp Forwarder",
+  "version": "1.8.0",
+  "private": true,
+  "description": "AR WA GROUP MESSAGE FORWARD - WhatsApp group message forwarder: exact original text, text only, daily schedule, password protected.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-packager . \"AR WhatsApp Forwarder\" --platform=win32 --arch=x64 --out=release --icon=build/icon.ico --overwrite --ignore=\"^/release\" --ignore=\"^/build/make-icon\""
+  },
+  "author": "Ariful Islam",
+  "license": "MIT",
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "whatsapp-web.js": "^1.34.8"
+  },
+  "devDependencies": {
+    "@electron/packager": "^19.0.2",
+    "electron": "^45.4.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ariful66541/ar-wa-group-message-forward.git"
+  }
+}

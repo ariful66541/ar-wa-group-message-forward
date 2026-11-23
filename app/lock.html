@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AR WA GROUP MESSAGE FORWARD — Locked</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#111c2f; --panel2:#16243a; --line:#22344f;
+    --text:#e8eef7; --muted:#8ea3bf; --green:#22c55e; --red:#ef4444; --blue:#3b82f6;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:
+    radial-gradient(900px 500px at 50% -10%, #16324f 0%, var(--bg) 60%);color:var(--text);
+    display:flex;align-items:center;justify-content:center}
+  .box{width:380px;max-width:92vw;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;padding:26px 24px;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+  .logo{width:54px;height:54px;border-radius:15px;background:linear-gradient(135deg,#22c55e,#0ea5e9);
+    display:grid;place-items:center;font-weight:800;color:#04121f;font-size:18px;margin:0 auto 14px}
+  h1{font-size:15px;margin:0;text-align:center;letter-spacing:.4px}
+  .sub{font-size:11.5px;color:var(--muted);text-align:center;margin-top:6px;line-height:1.5}
+  label{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;
+    font-weight:700;margin:20px 0 6px}
+  input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:12px 13px;font-size:15px;letter-spacing:4px;text-align:center;
+    outline:none;font-family:inherit}
+  input:focus{border-color:var(--blue)}
+  input.bad{border-color:var(--red)}
+  button{width:100%;margin-top:14px;cursor:pointer;border:0;border-radius:10px;padding:12px;
+    font-size:14px;font-weight:700;font-family:inherit;background:var(--green);color:#052012}
+  button:hover{background:#16a34a}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .err{font-size:12px;color:#ff9b9b;text-align:center;margin-top:10px;min-height:16px}
+  .foot{font-size:11px;color:var(--muted);text-align:center;margin-top:20px;padding-top:14px;
+    border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="logo">AR</div>
+    <h1>AR WA GROUP MESSAGE FORWARD</h1>
+    <div class="sub">This software is password protected.<br>Enter the password to open it.</div>
+    <label for="pw">Password</label>
+    <input id="pw" type="password" inputmode="numeric" autocomplete="off" autofocus placeholder="•••••" />
+    <button id="go">Unlock</button>
+    <div class="err" id="err"></div>
+    <div class="foot">Developed by Ariful Islam · +880 1307-432200</div>
+  </div>
+<script>
+  const pw = document.getElementById('pw');
+  const btn = document.getElementById('go');
+  const err = document.getElementById('err');
+
+  async function unlock() {
+    const value = pw.value;
+    if (!value) { pw.focus(); return; }
+    btn.disabled = true;
+    btn.textContent = 'Checking…';
+    const ok = await window.lockAPI.submit(value);
+    if (ok) {
+      err.textContent = '';
+      btn.textContent = 'Opening…';
+      await window.lockAPI.open();
+      return;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Unlock';
+    pw.classList.add('bad');
+    pw.value = '';
+    pw.focus();
+    err.textContent = 'Wrong password. Try again.';
+    setTimeout(() => pw.classList.remove('bad'), 1200);
+  }
+
+  btn.addEventListener('click', unlock);
+  pw.addEventListener('keydown', (e) => { if (e.key === 'Enter') unlock(); });
+</script>
+</body>
+</html>
