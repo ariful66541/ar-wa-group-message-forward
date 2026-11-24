@@ -118,14 +118,34 @@ function showPage(name) {
   try { localStorage.setItem('lastPage', which); } catch (e) {}
 }
 
+/* the top bar has two slides of buttons; this shows the one asked for */
+function showSlide(n) {
+  const which = n === 2 ? 2 : 1;
+  const s1 = $('slide1');
+  const s2 = $('slide2');
+  if (s1) s1.classList.toggle('active', which === 1);
+  if (s2) s2.classList.toggle('active', which === 2);
+  if ($('dot1')) $('dot1').classList.toggle('on', which === 1);
+  if ($('dot2')) $('dot2').classList.toggle('on', which === 2);
+  try { localStorage.setItem('lastSlide', String(which)); } catch (e) {}
+}
+
+/** the slide that holds the page we are on */
+function slideOf(page) {
+  return ['result', 'about'].includes(page) ? 2 : 1;
+}
+
 function wirePages() {
-  document.querySelectorAll('.wtab').forEach((btn) => {
-    btn.onclick = () => showPage(btn.dataset.page);
+  document.querySelectorAll('.wtab, .aboutbtn').forEach((btn) => {
+    if (!btn.dataset.page) return;
+    btn.onclick = () => { showPage(btn.dataset.page); showSlide(slideOf(btn.dataset.page)); };
   });
-  if ($('btnAbout')) $('btnAbout').onclick = () => showPage('about');
+  if ($('slidePrev')) $('slidePrev').onclick = () => showSlide(1);
+  if ($('slideNext')) $('slideNext').onclick = () => showSlide(2);
   let last = 'conn';
   try { last = localStorage.getItem('lastPage') || 'conn'; } catch (e) {}
   showPage(last);
+  showSlide(slideOf(last));
 }
 
 /* ------------------------------------------------------- scheduled messages */
@@ -451,7 +471,7 @@ async function init() {
       $('qrBox').innerHTML = '<div class="ph" style="color:#15803d;font-weight:700">✓ Connected</div>';
       $('qrHint').innerHTML = 'Connected — the QR code is no longer needed.';
       loadGroups();
-      if (!state.groupsLoadedOnce) { state.groupsLoadedOnce = true; showPage('work'); }
+      if (!state.groupsLoadedOnce) { state.groupsLoadedOnce = true; showPage('work'); showSlide(1); }
     }
     if (s.status === 'qr') {
       $('waStatusLine').innerHTML = 'Scan this QR code: WhatsApp → <b>Linked devices</b> → <b>Link a device</b>.';

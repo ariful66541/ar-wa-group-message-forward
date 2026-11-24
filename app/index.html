@@ -133,7 +133,16 @@
   /* 1 · connection: buttons on the left, QR code on the right */
   /* two pages, switched by the buttons in the top bar */
   .pagetabs{display:flex;gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--line);
-    border-radius:11px;padding:3px}
+    border-radius:11px;padding:3px;position:relative}
+  .tabslide{display:none;align-items:center;gap:4px}
+  .tabslide.active{display:flex}
+  .switcher{display:flex;align-items:center;gap:5px;margin-left:2px;padding-left:7px;border-left:1px solid var(--line)}
+  .arw{background:transparent;border:1px solid var(--line);color:#9db2cc;width:22px;height:22px;border-radius:6px;
+    padding:0;font-size:13px;line-height:1;display:grid;place-items:center}
+  .arw:hover{background:#1d2f4a;color:#e8eef7}
+  .dots{display:flex;gap:4px}
+  .dots i{width:5px;height:5px;border-radius:50%;background:#3a4f6b;display:block}
+  .dots i.on{background:var(--green)}
   .wtab{background:transparent;color:#9db2cc;font-size:11.5px;font-weight:700;padding:7px 11px;border-radius:8px;
     white-space:nowrap}
   .aboutbtn{background:var(--panel2);border:1px solid var(--line);color:#c9d8ea;font-size:11.5px;font-weight:700;
@@ -186,12 +195,26 @@
   </div>
   <div class="spacer"></div>
   <nav class="pagetabs" id="pageTabs">
-    <button class="wtab active" data-page="conn" id="tabConn" title="WhatsApp connection">1 · WhatsApp connection</button>
-    <button class="wtab" data-page="work" id="tabWork" title="Group forward">2 · Group forward</button>
-    <button class="wtab" data-page="sched" id="tabSched" title="Auto scheduled messages">3 · Scheduled messages</button>
-    <button class="wtab" data-page="result" id="tabResult" title="Results and history">4 · Results &amp; history</button>
+    <!-- slide 1: the pages that do the work -->
+    <div class="tabslide active" id="slide1">
+      <button class="wtab active" data-page="conn" id="tabConn" title="WhatsApp connection">1 · WhatsApp connection</button>
+      <button class="wtab" data-page="work" id="tabWork" title="Group forward">2 · Group forward</button>
+      <button class="wtab" data-page="sched" id="tabSched" title="Scheduled messages">3 · Scheduled messages</button>
+    </div>
+
+    <!-- slide 2: results, about and the switches -->
+    <div class="tabslide" id="slide2">
+      <button class="wtab" data-page="result" id="tabResult" title="Results and history">4 · Results &amp; history</button>
+      <button class="aboutbtn" data-page="about" id="btnAbout" title="About — my information">About</button>
+    </div>
+
+    <!-- the arrow switches between the two slides, so it stays outside them -->
+    <span class="switcher">
+      <button class="arw" id="slidePrev" title="Previous buttons">‹</button>
+      <span class="dots"><i class="on" id="dot1"></i><i id="dot2"></i></span>
+      <button class="arw" id="slideNext" title="Next buttons">›</button>
+    </span>
   </nav>
-  <button class="aboutbtn" id="btnAbout" title="About — my information">About</button>
   <div class="pill small"><span class="dot" id="waDot"></span><span id="waText">WhatsApp: not connected</span></div>
   <div class="pill small"><span class="dot" id="schedDot"></span><span id="schedText">Schedule 09:50 – 16:28</span></div>
 </header>
