@@ -43,7 +43,17 @@ class WaEngine extends EventEmitter {
     this._set('loading');
     fs.mkdirSync(this.sessionDir, { recursive: true });
 
-    // ---- engine 1: whatsapp-web.js -------------------------------------
+    // ---- engine 1: built-in window engine (works on every PC) ----------
+    // WhatsApp Web runs in the app's own window: no Chrome, no ChromeDriver,
+    // no npm, nothing to install on the computer.
+    try {
+      await this._startBuiltIn();
+      return this.status();
+    } catch (e) {
+      this.emit('log', { msg: 'Built-in WhatsApp window failed: ' + e.message, level: 'err' });
+    }
+
+    // ---- engine 2: whatsapp-web.js (fallback) --------------------------
     try {
       const ok = await this._startWweb();
       if (ok) return this.status();
@@ -51,7 +61,7 @@ class WaEngine extends EventEmitter {
       this.emit('log', { msg: 'Standard engine failed: ' + e.message, level: 'warn' });
     }
 
-    // ---- engine 2: built-in UI engine ---------------------------------
+    // ---- engine 3: puppeteer UI engine (last resort) -------------------
     try {
       await this._startManual();
     } catch (e) {
@@ -169,6 +179,23 @@ class WaEngine extends EventEmitter {
   // =========================================================================
   // Engine 2 — built-in UI engine (no WhatsApp internals needed)
   // =========================================================================
+  async _startBuiltIn() {
+    const { ManualWa } = require('./manual-wa-app');
+    this.engine = 'builtin';
+    this.manual = new ManualWa({
+      userData: this.userData,
+      onState: (s) => {
+        if (s.status) this.state = s.status;
+        if (s.qr !== undefined) this.qr = s.qr;
+        if (s.info !== undefined) this.info = s.info;
+        this.emit('state', this.status());
+      },
+      onLog: (msg, level) => this.emit('log', { msg, level }),
+      onMessage: (m) => this.emit('message', m)
+    });
+    await this.manual.start();
+  }
+
   async _startManual() {
     const { ManualWa } = require('./manual-wa');
     this.engine = 'ui';
@@ -190,7 +217,7 @@ class WaEngine extends EventEmitter {
   // Shared API
   // =========================================================================
   async groups() {
-    if (this.engine === 'ui' && this.manual) return this.manual.groups();
+    if ((this.engine === 'ui' || this.engine === 'builtin') && this.manual) return this.manual.groups();
     if (!this.client) throw new Error('WhatsApp is not connected yet.');
     const chats = await this.client.getChats();
     return chats
@@ -200,7 +227,7 @@ class WaEngine extends EventEmitter {
   }
 
   async sendToGroup(id, text) {
-    if (this.engine === 'ui' && this.manual) return this.manual.sendToGroup(id, text);
+    if ((this.engine === 'ui' || this.engine === 'builtin') && this.manual) return this.manual.sendToGroup(id, text);
     if (!this.client) throw new Error('WhatsApp is not connected yet.');
     const chat = await this.client.getChatById(id);
     await chat.sendMessage(text);   // text passed through untouched
