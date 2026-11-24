@@ -598,7 +598,19 @@ setInterval(() => {
 // ---------------------------------------------------------------------------
 const crypto = require('crypto');
 
-const APP_PASSWORD = '66542';
+// The password is NOT written in the source. It is read from
+//   %APPDATA%\AR WhatsApp Forwarder\password.txt
+// (created by the owner; the file stays on the owner's PC).
+// If that file does not exist, the built-in password is used.
+const DEFAULT_PASSWORD = '66542';
+function appPassword() {
+  try {
+    const f = path.join(app.getPath('userData'), 'password.txt');
+    const v = fs.readFileSync(f, 'utf8').trim();
+    if (v) return v;
+  } catch (e) { /* no file – use the built-in one */ }
+  return DEFAULT_PASSWORD;
+}
 const UNLOCK_FILE = () => path.join(app.getPath('userData'), 'unlocked.json');
 // The password is asked EVERY time the software is opened. Nothing is remembered
 // between runs; the unlock only lasts for this one run of the app.
@@ -631,7 +643,7 @@ let lockTries = 0;
 
 ipcMain.handle('lock:submit', async (event, password) => {
   await new Promise((r) => setTimeout(r, 350));           // slow down guessing
-  if (!samePassword(password, APP_PASSWORD)) {
+  if (!samePassword(password, appPassword())) {
     lockTries++;
     try { logLine('Wrong password (' + lockTries + ') on the lock screen.', 'warn'); } catch (e) {}
     return { ok: false, tries: lockTries };

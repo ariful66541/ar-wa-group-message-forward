@@ -89,6 +89,10 @@ You can add as many scheduled messages as you like. They run while the software 
 Then:
 
 3. Enter the password **every time** you open the software (nothing is remembered between runs).
+
+> **The password is not published here.** It is sent privately by email —
+> **arifulislam4390@gmail.com** — to the person who is allowed to use the software.
+> Write to that address to ask for it.
 4. Press **Connect WhatsApp** and scan the QR code with your phone
    (WhatsApp → Linked devices → Link a device).
 5. Choose the **source group**, tick the **target groups**, press **Save groups**.
