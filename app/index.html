@@ -197,17 +197,13 @@
   .connstatus.wait .dot{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.18)}
   .connstatus.wait{color:#fcd34d;border-color:rgba(245,158,11,.4)}
   /* 2 & 3: groups on the left, schedule & safety on the right */
-  .groupgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
-  .groupgrid>.gright{border-left:1px solid var(--line);padding-left:18px}
-  .colhead{font-size:11px;font-weight:800;letter-spacing:1.1px;color:#9fc6f5;text-transform:uppercase;margin-bottom:10px}
-  .groupgrid .list{max-height:190px}
+  .list{max-height:190px}
   .schedstatus{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px}
   .srow{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
   .srow b{color:#e8eef7;font-size:12.5px}
   #schedOn.on{color:#86efac}
   #schedOn.off{color:#fcd34d}
-  @media (max-width:820px){.groupgrid{grid-template-columns:1fr}
-    .groupgrid>.gright{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:14px}}
+
   @media (max-width:820px){.conngrid{grid-template-columns:1fr}
     .connright{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:14px}}
 
@@ -400,58 +396,52 @@
 
   <!-- ===================== PAGE 2: forward groups + schedule ===================== -->
   <section class="page" id="page-work">
+    <!-- Groups: one card, full width -->
     <div class="card">
-      <h2>2 &amp; 3 · Groups and schedule</h2>
-      <div class="groupgrid">
-        <!-- LEFT: 2 · Groups -->
-        <div class="gleft">
-          <div class="colhead">2 · Groups</div>
-          <div class="warnbox">Messages are forwarded <b>exactly as received</b> — no added text, no prefix, no change to emoji, numbers or line breaks. Images, PDFs, videos, audio and stickers are <b>never</b> forwarded.</div>
-          <div class="field">
-            <label>Source groups (read messages from) &nbsp;<span id="sourceCount" class="tag">0 selected</span></label>
-            <div class="list" id="sourceList"><div class="item" style="color:var(--muted)">— connect WhatsApp first —</div></div>
-            <div class="hint" style="margin-top:4px">Tick <b>one or more</b> groups — every message from every ticked group is forwarded.</div>
-          </div>
-          <div class="field">
-            <label>Target groups (send to) &nbsp;<span id="targetCount" class="tag">0 selected</span></label>
-            <div class="list" id="targetList"><div class="item" style="color:var(--muted)">— connect WhatsApp first —</div></div>
-            <div class="hint" style="margin-top:4px">Tick <b>one or more</b> groups — the message goes to every ticked group.</div>
-          </div>
-          <div class="row" style="margin-top:4px">
-            <button class="btn-ghost" id="btnReload">Reload group list</button>
-            <button class="btn-primary" id="btnSaveGroups">Save groups</button>
-          </div>
-        </div>
-
-        <!-- RIGHT: 3 · Schedule & safety -->
-        <div class="gright">
-          <div class="colhead">3 · Schedule &amp; safety</div>
-          <div class="grid2">
-            <div class="field"><label>Start time (24h)</label><input type="time" id="startTime" value="09:50"></div>
-            <div class="field"><label>End time (24h)</label><input type="time" id="endTime" value="16:28"></div>
-          </div>
-          <div class="grid2">
-            <div class="field"><label>Delay between groups (sec)</label><input type="number" id="delay" min="0" max="120" value="3"></div>
-            <div class="field"><label>Daily limit (0 = unlimited)</label><input type="number" id="dailyLimit" min="0" value="0"></div>
-          </div>
-          <div class="field"><button class="btn-primary" id="btnSaveSchedule" style="width:100%">Save settings</button></div>
-          <div class="hint">Forwarding runs every day only between the start and end time. A message arriving outside that window is not sent.</div>
-
-          <div class="schedstatus">
-            <div class="srow"><span>Now</span><b id="schedNow">—</b></div>
-            <div class="srow"><span>Window</span><b id="schedWindow">09:50 – 16:28</b></div>
-            <div class="srow"><span>Forwarding</span><b id="schedOn">—</b></div>
-          </div>
-        </div>
+      <h2>Group</h2>
+      <div class="warnbox">Messages are forwarded <b>exactly as received</b> — no added text, no prefix, no change to emoji, numbers or line breaks. Images, PDFs, videos, audio and stickers are <b>never</b> forwarded.</div>
+      <div class="field">
+        <label>Source groups (read messages from) &nbsp;<span id="sourceCount" class="tag">0 selected</span></label>
+        <div class="list" id="sourceList"><div class="item" style="color:var(--muted)">— connect WhatsApp first —</div></div>
+        <div class="hint" style="margin-top:4px">Tick <b>one or more</b> groups — every message from every ticked group is forwarded.</div>
+      </div>
+      <div class="field">
+        <label>Target groups (send to) &nbsp;<span id="targetCount" class="tag">0 selected</span></label>
+        <div class="list" id="targetList"><div class="item" style="color:var(--muted)">— connect WhatsApp first —</div></div>
+        <div class="hint" style="margin-top:4px">Tick <b>one or more</b> groups — the message goes to every ticked group.</div>
+      </div>
+      <div class="row" style="margin-top:4px">
+        <button class="btn-ghost" id="btnReload">Reload group list</button>
+        <button class="btn-primary" id="btnSaveGroups">Save groups</button>
       </div>
     </div>
 
+    <!-- Schedule & safety: its own card, underneath -->
+    <div class="card">
+      <h2>Schedule &amp; safety</h2>
+      <div class="grid2">
+        <div class="field"><label>Start time (24h)</label><input type="time" id="startTime" value="09:50"></div>
+        <div class="field"><label>End time (24h)</label><input type="time" id="endTime" value="16:28"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Delay between groups (sec)</label><input type="number" id="delay" min="0" max="120" value="3"></div>
+        <div class="field"><label>Daily limit (0 = unlimited)</label><input type="number" id="dailyLimit" min="0" value="0"></div>
+      </div>
+      <div class="field"><button class="btn-primary" id="btnSaveSchedule" style="width:100%">Save settings</button></div>
+      <div class="hint">Forwarding runs every day only between the start and end time. A message arriving outside that window is not sent.</div>
+
+      <div class="schedstatus">
+        <div class="srow"><span>Now</span><b id="schedNow">—</b></div>
+        <div class="srow"><span>Window</span><b id="schedWindow">09:50 – 16:28</b></div>
+        <div class="srow"><span>Forwarding</span><b id="schedOn">—</b></div>
+      </div>
+    </div>
   </section>
 
   <!-- ===================== PAGE 3: auto scheduled messages ===================== -->
   <section class="page" id="page-sched">
     <div class="card">
-      <h2>4 · Auto scheduled messages</h2>
+      <h2>Auto scheduled messages</h2>
       <div class="hint" style="margin-bottom:8px">Write a message once, choose the groups and the time — the software sends it by itself.
         You can add as many scheduled messages as you like, and start or stop each one with its button.</div>
       <div id="campaignList"></div>
