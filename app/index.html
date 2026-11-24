@@ -15,6 +15,25 @@
   .logo{width:44px;height:44px;flex:none;background:url("logo.png") center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(34,197,94,.55))}
   h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.2px}
   .sub{font-size:11.5px;color:var(--muted)}
+  .camp{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:rgba(255,255,255,.02)}
+  .camphead{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .camphead .cname{font-weight:700;font-size:13px;flex:1;min-width:120px}
+  .badge-run{font-size:10.5px;font-weight:800;letter-spacing:.8px;padding:3px 9px;border-radius:999px;
+    background:rgba(34,197,94,.16);color:#4ade80;border:1px solid rgba(34,197,94,.45)}
+  .badge-stop{font-size:10.5px;font-weight:800;letter-spacing:.8px;padding:3px 9px;border-radius:999px;
+    background:rgba(148,163,184,.14);color:#94a3b8;border:1px solid rgba(148,163,184,.4)}
+  .camp .row2{display:flex;gap:8px;flex-wrap:wrap}
+  .camp .row2>*{flex:1;min-width:130px}
+  .camp textarea{width:100%;min-height:74px;resize:vertical}
+  .camp .mini{font-size:11px;color:var(--muted);margin:6px 0 4px}
+  .camp .del{background:transparent;border:1px solid rgba(239,68,68,.5);color:#fca5a5;flex:none}
+  .camp .statrow{display:flex;gap:8px;flex-wrap:wrap}
+  .camp .statrow button{flex:1 1 auto;min-width:96px}
+  .camp .camphead .cname{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:9px;padding:7px 10px;font-size:12.5px;font-weight:700;font-family:inherit;flex:1;min-width:130px}
+  .days{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+  .days label{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);
+    border:1px solid var(--line);border-radius:8px;padding:3px 7px;cursor:pointer}
   .h1a{display:block;font-size:17px;font-weight:800;letter-spacing:2.5px;line-height:1.1;color:#e8f5ff}
   .h1b{display:block;font-size:13.5px;font-weight:700;letter-spacing:1.4px;line-height:1.25;color:#22c55e}
   .slogan{font-size:9px;letter-spacing:1.05px;font-weight:700;color:#7dd3fc;text-transform:uppercase;margin-top:3px;white-space:nowrap}
@@ -35,10 +54,13 @@
   .card h2{font-size:13px;margin:0 0 10px;color:#c9d8ea;text-transform:uppercase;letter-spacing:.7px;font-weight:700}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}
-  select,input[type=text],input[type=time],input[type=number],textarea{
+  select,input[type=text],input[type=time],input[type=date],input[type=number],textarea{
     width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
     border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;outline:none}
   select:focus,input:focus,textarea:focus{border-color:var(--blue)}
+  input[type=date],input[type=time]{color-scheme:dark}
+  input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-calendar-picker-indicator{
+    filter:invert(.8);cursor:pointer}
   button{cursor:pointer;border:0;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600;font-family:inherit;transition:.15s}
   button:disabled{opacity:.45;cursor:not-allowed}
   .btn-primary{background:var(--green);color:#052012}
@@ -169,6 +191,16 @@
       <div class="field"><label>Daily limit (0 = unlimited)</label><input type="number" id="dailyLimit" min="0" value="0"></div>
       <div class="field"><button class="btn-primary" id="btnSaveSchedule" style="width:100%">Save settings</button></div>
       <div class="hint">Forwarding runs every day only between the start and end time. A message arriving outside that window is not sent.</div>
+    </div>
+
+    <div class="card">
+      <h2>4 · Auto scheduled messages</h2>
+      <div class="hint" style="margin-bottom:8px">Write a message once, choose the groups and the time — the software sends it by itself.
+        You can add as many scheduled messages as you like, and start or stop each one with its button.</div>
+      <div id="campaignList"></div>
+      <div class="statrow" style="margin-top:10px">
+        <button class="btn-primary" id="btnAddCampaign">+ Add scheduled message</button>
+      </div>
     </div>
   </section>
 

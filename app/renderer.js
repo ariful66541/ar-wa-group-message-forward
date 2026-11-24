@@ -95,6 +95,186 @@ function updateCounts() {
 
 function updateTargetCount() { updateCounts(); }
 
+/* ------------------------------------------------------- scheduled messages */
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function repeatLabel(c) {
+  if (c.repeat === 'once') return 'once';
+  if (c.repeat === 'daily') return 'every day';
+  if (c.repeat === 'weekdays') return 'Mon–Fri';
+  if (c.repeat === 'weekly') return 'every ' + (c.weekdays || []).map((d) => DAY_NAMES[d]).join(', ');
+  if (c.repeat === 'monthly') return 'monthly on day ' + (c.startDate ? Number(c.startDate.slice(8, 10)) : 1);
+  if (c.repeat === 'every') return 'every ' + c.everyMinutes + ' min';
+  return c.repeat;
+}
+
+function campState(c) {
+  if (!c.enabled) return { text: 'STOPPED', cls: 'badge-stop' };
+  if (!String(c.text || '').trim()) return { text: 'NO TEXT', cls: 'badge-stop' };
+  if (!(c.targetGroups || []).length) return { text: 'NO GROUPS', cls: 'badge-stop' };
+  return { text: 'RUNNING', cls: 'badge-run' };
+}
+
+function renderCampaigns() {
+  const list = $('campaignList');
+  const camps = (state.settings && state.settings.campaigns) || [];
+  if (!camps.length) {
+    list.innerHTML = '<div class="hint">No scheduled message yet. Press <b>+ Add scheduled message</b>.</div>';
+    return;
+  }
+
+  list.innerHTML = camps.map((c, idx) => {
+    const st = campState(c);
+    const groupOpts = groups.map((g) => `
+      <label class="item">
+        <input type="checkbox" data-camp="${idx}" data-gid="${esc(g.id)}" ${(c.targetGroups || []).some((t) => t.id === g.id) ? 'checked' : ''}>
+        <span class="nm">${esc(g.name)}</span>
+      </label>`).join('') || '<div class="item" style="color:var(--muted)">— connect WhatsApp first —</div>';
+
+    return `<div class="camp" data-idx="${idx}">
+      <div class="camphead">
+        <span class="${st.cls}">${st.text}</span>
+        <input class="cname" data-camp="${idx}" data-field="name" value="${esc(c.name || '')}" placeholder="Name (e.g. Morning offer)">
+        <button class="btn-ghost del" data-act="del" data-idx="${idx}">Delete</button>
+      </div>
+
+      <div class="mini">1 · Recipient groups — tick one or more</div>
+      <div class="list" data-groups="${idx}">${groupOpts}</div>
+
+      <div class="mini" style="margin-top:10px">2 · Message to send — sent exactly as typed</div>
+      <textarea data-camp="${idx}" data-field="text" placeholder="Type the message that will be sent to every ticked group…">${esc(c.text || '')}</textarea>
+
+      <div class="mini" style="margin-top:10px">3 · Repeat</div>
+      <div class="row2">
+        <select data-camp="${idx}" data-field="repeat">
+          <option value="once" ${c.repeat === 'once' ? 'selected' : ''}>Once</option>
+          <option value="daily" ${c.repeat === 'daily' ? 'selected' : ''}>Every day</option>
+          <option value="weekdays" ${c.repeat === 'weekdays' ? 'selected' : ''}>Monday to Friday</option>
+          <option value="weekly" ${c.repeat === 'weekly' ? 'selected' : ''}>Selected days of the week</option>
+          <option value="monthly" ${c.repeat === 'monthly' ? 'selected' : ''}>Once a month</option>
+          <option value="every" ${c.repeat === 'every' ? 'selected' : ''}>Every N minutes</option>
+        </select>
+        <input type="number" min="1" max="1440" data-camp="${idx}" data-field="everyMinutes" value="${c.everyMinutes || 60}" title="minutes" ${c.repeat === 'every' ? '' : 'disabled'}>
+      </div>
+      <div class="days">
+        ${DAY_NAMES.map((d, i) => `<label><input type="checkbox" data-camp="${idx}" data-day="${i}" ${(c.weekdays || []).includes(i) ? 'checked' : ''}>${d}</label>`).join('')}
+      </div>
+
+      <div class="mini" style="margin-top:10px">4 · Time and dates</div>
+      <div class="row2">
+        <input type="time" data-camp="${idx}" data-field="time0" value="${esc(c.times[0] || '10:00')}" title="time">
+        <input type="date" data-camp="${idx}" data-field="startDate" value="${esc(c.startDate || '')}" title="from date">
+        <input type="date" data-camp="${idx}" data-field="endDate" value="${esc(c.endDate || '')}" title="until date">
+      </div>
+
+      <div class="mini" style="margin-top:8px">Status: <b>${st.text}</b> · ${esc(repeatLabel(c))} at ${esc((c.times || []).join(', '))}
+        ${c.stats && c.stats.lastAt ? ' · last sent ' + new Date(c.stats.lastAt).toLocaleString() : ' · never sent yet'}
+        ${c.stats && c.stats.lastError ? ' · <span class="fail">' + esc(c.stats.lastError) + '</span>' : ''}</div>
+
+      <div class="statrow" style="margin-top:8px">
+        <button class="btn-primary" data-act="start" data-idx="${idx}">▶ Start</button>
+        <button class="btn-ghost" data-act="stop" data-idx="${idx}">■ Stop</button>
+        <button class="btn-ghost" data-act="now" data-idx="${idx}">Send now</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-field]').forEach((el) => {
+    const ev = el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'date' || el.type === 'time' ? 'change' : 'input';
+    el.addEventListener(ev, () => campEdit(el));
+  });
+  list.querySelectorAll('[data-day]').forEach((el) => el.addEventListener('change', () => campEdit(el)));
+  list.querySelectorAll('[data-gid]').forEach((el) => el.addEventListener('change', () => campEdit(el)));
+  list.querySelectorAll('[data-act]').forEach((btn) => btn.addEventListener('click', () => campAction(btn)));
+}
+
+let campSaveTimer = null;
+function campEdit(el) {
+  const idx = Number(el.dataset.camp);
+  const c = state.settings.campaigns[idx];
+  if (!c) return;
+
+  if (el.dataset.field === 'name') c.name = el.value;
+  else if (el.dataset.field === 'text') c.text = el.value;
+  else if (el.dataset.field === 'repeat') { c.repeat = el.value; }
+  else if (el.dataset.field === 'everyMinutes') c.everyMinutes = Number(el.value) || 60;
+  else if (el.dataset.field === 'time0') c.times = [el.value];
+  else if (el.dataset.field === 'startDate') c.startDate = el.value;
+  else if (el.dataset.field === 'endDate') c.endDate = el.value;
+  else if (el.dataset.day !== undefined) {
+    const d = Number(el.dataset.day);
+    const set = new Set(c.weekdays || []);
+    if (el.checked) set.add(d); else set.delete(d);
+    c.weekdays = [...set].sort();
+  } else if (el.dataset.gid !== undefined) {
+    const box = el.closest('.camp');
+    const ids = [...box.querySelectorAll('[data-gid]')].filter((x) => x.checked).map((x) => x.dataset.gid);
+    c.targetGroups = ids.map((id) => groups.find((g) => g.id === id)).filter(Boolean);
+  }
+
+  clearTimeout(campSaveTimer);
+  campSaveTimer = setTimeout(saveCampaigns, 700);
+}
+
+async function saveCampaigns() {
+  try {
+    state.settings = await API.saveSettings({ campaigns: state.settings.campaigns });
+    renderCampaigns();
+  } catch (e) { logLine(e.message, 'err'); }
+}
+
+async function campAction(btn) {
+  const idx = Number(btn.dataset.idx);
+  const c = state.settings.campaigns[idx];
+  if (!c) return;
+  try {
+    if (btn.dataset.act === 'del') {
+      state.settings.campaigns.splice(idx, 1);
+      await saveCampaigns();
+      logLine('Scheduled message deleted.');
+      return;
+    }
+    if (btn.dataset.act === 'start' || btn.dataset.act === 'stop') {
+      state.settings = await API.setCampaign(c.id, btn.dataset.act === 'start');
+      renderCampaigns();
+      logLine(btn.dataset.act === 'start' ? 'Scheduled message STARTED.' : 'Scheduled message STOPPED.', btn.dataset.act === 'start' ? 'info' : 'warn');
+      return;
+    }
+    if (btn.dataset.act === 'now') {
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      const r = await API.sendCampaignNow(c.id);
+      state.settings = await API.getSettings();
+      renderCampaigns();
+      logLine(`Sent now to ${r.ok}/${r.results.length} group(s).`, r.failed ? 'warn' : 'info');
+    }
+  } catch (e) {
+    logLine(e.message, 'err');
+    btn.disabled = false;
+  }
+}
+
+function addCampaign() {
+  const c = {
+    id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: 'Message ' + ((state.settings.campaigns || []).length + 1),
+    text: '',
+    targetGroups: [],
+    enabled: false,
+    startDate: '', endDate: '',
+    times: ['10:00'],
+    repeat: 'daily',
+    weekdays: [1, 2, 3, 4, 5],
+    everyMinutes: 60,
+    lastRunKey: '',
+    stats: { sent: 0, failed: 0, lastAt: null, lastError: null }
+  };
+  state.settings.campaigns = [...(state.settings.campaigns || []), c];
+  renderCampaigns();
+  saveCampaigns();
+  logLine('Scheduled message added. Choose the groups, write the text, then press Start.');
+}
+
 /* ---------------------------------------------------------------- stats / history */
 function renderStats(stats) {
   if (!stats) return;
@@ -153,6 +333,8 @@ async function init() {
   };
 
   $('btnReload').onclick = loadGroups;
+
+  $('btnAddCampaign').onclick = addCampaign;
 
   $('btnSaveGroups').onclick = async () => {
     const srcIds = [...$('sourceList').querySelectorAll('input[type=checkbox]:checked')].map((c) => c.dataset.id);
@@ -261,12 +443,14 @@ function applySettings(s) {
   renderStats(s.stats);
   renderHistory(s.history);
   if (groups.length) renderGroups();
+  renderCampaigns();
 }
 
 async function loadGroups() {
   try {
     groups = await API.groups();
     renderGroups();
+    renderCampaigns();
     logLine(`Loaded ${groups.length} group(s).`);
   } catch (e) {
     logLine(e.message, 'err');

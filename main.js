@@ -26,6 +26,8 @@ const LOG_FILE = () => path.join(app.getPath('userData'), 'activity.log');
 const DEFAULT_SETTINGS = {
   sourceGroups: [],       // [{ id, name }] — every one of them is read from
   targetGroups: [],       // [{ id, name }] — every one of them receives
+  campaigns: [],          // scheduled messages (see DEFAULT_CAMPAIGN)
+  autoSchedule: { enabled: false },
   schedule: { start: '09:50', end: '16:28' },
   dailyLimit: 0,          // 0 = unlimited
   perGroupDelay: 3,       // seconds between two target groups
@@ -38,6 +40,41 @@ let settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
 /** the first source group (kept for older code paths) */
 function firstSource() {
   return (settings.sourceGroups && settings.sourceGroups[0]) || null;
+}
+
+// A scheduled message: pick the groups, write the text, choose the rhythm.
+function blankCampaign() {
+  return {
+    id: '',
+    name: '',
+    text: '',
+    targetGroups: [],                 // [{ id, name }] — recipients
+    enabled: false,
+    startDate: '',                    // YYYY-MM-DD, empty = today
+    endDate: '',                      // YYYY-MM-DD, empty = no end
+    times: ['10:00'],                 // HH:MM, one or more
+    repeat: 'daily',                  // once | daily | weekdays | weekly | monthly | every
+    weekdays: [1, 2, 3, 4, 5],        // 0 = Sunday
+    everyMinutes: 60,                 // for repeat = every
+    lastRunKey: '',                   // guards against sending twice in one minute
+    stats: { sent: 0, failed: 0, lastAt: null, lastError: null }
+  };
+}
+
+function normaliseCampaign(c) {
+  const base = blankCampaign();
+  const out = { ...base, ...(c || {}) };
+  out.targetGroups = Array.isArray(out.targetGroups) ? out.targetGroups.filter((g) => g && g.name) : [];
+  out.times = (Array.isArray(out.times) ? out.times : [out.times || '10:00'])
+    .map((t) => String(t || '').trim())
+    .filter((t) => hhmmToMinutes(t) !== null);
+  if (!out.times.length) out.times = ['10:00'];
+  out.weekdays = (Array.isArray(out.weekdays) ? out.weekdays : base.weekdays)
+    .map(Number).filter((d) => d >= 0 && d <= 6);
+  out.everyMinutes = Math.min(1440, Math.max(1, Number(out.everyMinutes) || 60));
+  out.repeat = ['once', 'daily', 'weekdays', 'weekly', 'monthly', 'every'].includes(out.repeat) ? out.repeat : 'daily';
+  out.stats = { ...base.stats, ...(out.stats || {}) };
+  return out;
 }
 
 function loadSettings() {
@@ -55,6 +92,8 @@ function loadSettings() {
     }
     if (!Array.isArray(settings.sourceGroups)) settings.sourceGroups = [];
     if (!Array.isArray(settings.targetGroups)) settings.targetGroups = [];
+    settings.campaigns = Array.isArray(settings.campaigns) ? settings.campaigns.map(normaliseCampaign) : [];
+    settings.autoSchedule = { enabled: false, ...(settings.autoSchedule || {}) };
     delete settings.sourceGroup;
   } catch (e) {
     settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
@@ -110,6 +149,114 @@ function isWithinSchedule(d = new Date()) {
 
 function scheduleText() {
   return `${settings.schedule.start} – ${settings.schedule.end}`;
+}
+
+// ---------------------------------------------------------------------------
+// Scheduled messages (pick groups + write the text + choose the rhythm)
+// ---------------------------------------------------------------------------
+function pad2(n) { return String(n).padStart(2, '0'); }
+function ymd(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+
+/** does this campaign want to send at this exact minute? */
+function campaignDueAt(c, d = new Date()) {
+  if (!c.enabled) return false;
+  if (!c.text || !String(c.text).trim()) return false;
+  if (!c.targetGroups.length) return false;
+
+  const today = ymd(d);
+  if (c.startDate && today < c.startDate) return false;
+  if (c.endDate && today > c.endDate) return false;
+
+  if (c.repeat === 'weekly') {
+    const day = d.getDay();
+    if (!c.weekdays.includes(day)) return false;
+  }
+  if (c.repeat === 'weekdays') {
+    const day = d.getDay();
+    if (day === 0 || day === 6) return false;
+  }
+  if (c.repeat === 'monthly') {
+    // the same day of the month as the start date
+    if (c.startDate) {
+      const sd = Number(c.startDate.slice(8, 10));
+      if (sd && d.getDate() !== sd) return false;
+    }
+  }
+  if (c.repeat === 'once') {
+    if (c.startDate && today !== c.startDate) return false;
+  }
+
+  const hhmm = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+
+  if (c.repeat === 'every') {
+    const start = hhmmToMinutes(c.times[0] || '00:00');
+    const end = hhmmToMinutes(settings.schedule.end);
+    const nowMin = d.getHours() * 60 + d.getMinutes();
+    if (nowMin < start) return false;
+    if (end !== null && settings.schedule.end !== settings.schedule.start && nowMin >= end) return false;
+    return (nowMin - start) % c.everyMinutes === 0;
+  }
+
+  return c.times.includes(hhmm);
+}
+
+let schedulerTimer = null;
+let schedulerBusy = false;
+
+function startScheduler() {
+  if (schedulerTimer) clearInterval(schedulerTimer);
+  schedulerTimer = setInterval(() => runScheduler().catch(() => {}), 20000);
+  runScheduler().catch(() => {});
+}
+
+async function runScheduler() {
+  if (schedulerBusy) return;
+  const now = new Date();
+  const due = settings.campaigns.filter((c) => campaignDueAt(c, now));
+  if (!due.length) return;
+
+  schedulerBusy = true;
+  try {
+    for (const c of due) {
+      const key = ymd(now) + ' ' + `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+      if (c.lastRunKey === key) continue;
+      c.lastRunKey = key;
+
+      const e = getEngine();
+      if (!e || e.state !== 'ready') {
+        c.stats.lastError = 'WhatsApp is not connected';
+        log(`Scheduled "${c.name || 'message'}" skipped: WhatsApp is not connected.`, 'warn');
+        saveSettings();
+        continue;
+      }
+
+      const results = await forwardToTargets(String(c.text), c.targetGroups.slice());
+      const ok = results.filter((r) => r.ok).length;
+      const failed = results.length - ok;
+      c.stats.sent += ok;
+      c.stats.failed += failed;
+      c.stats.lastAt = new Date().toISOString();
+      c.stats.lastError = failed ? `${failed} group(s) failed` : null;
+      if (c.repeat === 'once') c.enabled = false;      // a one-time message is done
+
+      settings.forwardHistory.unshift({
+        at: c.stats.lastAt,
+        source: '⏰ ' + (c.name || 'scheduled message'),
+        targets: results,
+        text: String(c.text),
+        ok,
+        failed
+      });
+      if (settings.forwardHistory.length > 200) settings.forwardHistory.length = 200;
+
+      saveSettings();
+      sendToUi('settings', publicSettings());
+      sendToUi('history', settings.forwardHistory.slice(0, 50));
+      log(`Scheduled "${c.name || 'message'}" sent to ${ok}/${results.length} group(s)${failed ? `, ${failed} failed` : ''}.`, failed ? 'warn' : 'info');
+    }
+  } finally {
+    schedulerBusy = false;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -269,6 +416,7 @@ function publicSettings() {
   return {
     sourceGroups: settings.sourceGroups,
     targetGroups: settings.targetGroups,
+    campaigns: settings.campaigns,
     schedule: settings.schedule,
     dailyLimit: settings.dailyLimit,
     perGroupDelay: settings.perGroupDelay,
@@ -294,6 +442,50 @@ ipcMain.handle('wa:state', async () => (engine ? engine.status() : { status: 'st
 ipcMain.handle('wa:groups', async () => getGroups());
 
 ipcMain.handle('settings:get', async () => publicSettings());
+ipcMain.handle('campaign:set', async (_e, id, enabled) => {
+  const c = settings.campaigns.find((x) => x.id === id);
+  if (!c) throw new Error('That scheduled message no longer exists.');
+  if (enabled) {
+    if (!String(c.text || '').trim()) throw new Error('Write the message text first.');
+    if (!c.targetGroups.length) throw new Error('Choose at least one recipient group first.');
+    c.enabled = true;
+    c.lastRunKey = '';                       // it may send again from the next slot
+    log(`Scheduled "${c.name || 'message'}" STARTED.`);
+  } else {
+    c.enabled = false;
+    log(`Scheduled "${c.name || 'message'}" STOPPED.`, 'warn');
+  }
+  saveSettings();
+  sendToUi('settings', publicSettings());
+  return publicSettings();
+});
+
+ipcMain.handle('campaign:sendNow', async (_e, id) => {
+  const c = settings.campaigns.find((x) => x.id === id);
+  if (!c) throw new Error('That scheduled message no longer exists.');
+  if (!String(c.text || '').trim()) throw new Error('Write the message text first.');
+  if (!c.targetGroups.length) throw new Error('Choose at least one recipient group first.');
+  const e = getEngine();
+  if (!e || e.state !== 'ready') throw new Error('Connect WhatsApp first.');
+  const results = await forwardToTargets(String(c.text), c.targetGroups.slice());
+  const ok = results.filter((r) => r.ok).length;
+  const failed = results.length - ok;
+  c.stats.sent += ok;
+  c.stats.failed += failed;
+  c.stats.lastAt = new Date().toISOString();
+  c.stats.lastError = failed ? `${failed} group(s) failed` : null;
+  settings.forwardHistory.unshift({
+    at: c.stats.lastAt, source: '⏰ ' + (c.name || 'scheduled message'),
+    targets: results, text: String(c.text), ok, failed
+  });
+  if (settings.forwardHistory.length > 200) settings.forwardHistory.length = 200;
+  saveSettings();
+  sendToUi('settings', publicSettings());
+  sendToUi('history', settings.forwardHistory.slice(0, 50));
+  log(`Scheduled "${c.name || 'message'}" sent now to ${ok}/${results.length} group(s).`, failed ? 'warn' : 'info');
+  return { ok, failed, results };
+});
+
 ipcMain.handle('settings:save', async (_e, patch) => {
   if (patch.schedule) {
     if (hhmmToMinutes(patch.schedule.start) === null || hhmmToMinutes(patch.schedule.end) === null) {
@@ -309,6 +501,9 @@ ipcMain.handle('settings:save', async (_e, patch) => {
   }
   if (engine && engine.manual) engine.manual.setSourceName(settings.sourceGroups.map((g) => g.name));
   if (patch.targetGroups !== undefined) settings.targetGroups = patch.targetGroups;
+  if (patch.campaigns !== undefined) {
+    settings.campaigns = (Array.isArray(patch.campaigns) ? patch.campaigns : []).map(normaliseCampaign);
+  }
   if (patch.dailyLimit !== undefined) settings.dailyLimit = Math.max(0, Number(patch.dailyLimit) || 0);
   if (patch.perGroupDelay !== undefined) settings.perGroupDelay = Math.max(0, Number(patch.perGroupDelay) || 0);
   saveSettings();
@@ -528,6 +723,7 @@ app.on('second-instance', () => {
 app.whenReady().then(() => {
   try { fs.unlinkSync(UNLOCK_FILE()); } catch (e) {}   // old versions saved an unlock - ignore it
   loadSettings();
+  startScheduler();
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

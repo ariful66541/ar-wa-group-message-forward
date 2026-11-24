@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('api', {
 
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:save', patch),
+  setCampaign: (id, enabled) => ipcRenderer.invoke('campaign:set', id, enabled),
+  sendCampaignNow: (id) => ipcRenderer.invoke('campaign:sendNow', id),
 
   clearHistory: () => ipcRenderer.invoke('history:clear'),
   resetStats: () => ipcRenderer.invoke('stats:reset'),

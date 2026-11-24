@@ -31,7 +31,7 @@ Phone: +880 1307-432200 · Email: arifulislam4390@gmail.com
 
 | File | What it is |
 |---|---|
-| `AR-WA-GROUP-MESSAGE-FORWARD-Setup-2.1.0.exe` | Installer — installs the app and puts a shortcut on the desktop |
+| `AR-WA-GROUP-MESSAGE-FORWARD-Setup-2.2.0.exe` | Installer — installs the app and puts a shortcut on the desktop |
 | `AR-WhatsApp-Forwarder-Windows.zip` | Portable build — unzip and run, nothing to install |
 
 Both are on the [Releases](https://github.com/ariful66541/ar-wa-group-message-forward/releases) page.
@@ -56,11 +56,24 @@ Step 2 has two tick lists:
 - **Target groups** — tick one or more. Each message goes to every ticked group, in order,
   with the delay you set between groups.
 
+## Auto scheduled messages
+
+Section **4 · Auto scheduled messages** sends a message you write once, without anyone pressing anything:
+
+1. **Recipient groups** — tick one or more target groups.
+2. **Message to send** — type the text; it goes out exactly as typed.
+3. **Repeat** — once · every day · Monday to Friday · chosen days of the week · once a month · every N minutes.
+4. **Time and dates** — the time of day, an optional "from" date and an optional "until" date.
+5. **Status and buttons** — each message shows **RUNNING** or **STOPPED** and has **▶ Start**,
+   **■ Stop** and **Send now** buttons.
+
+You can add as many scheduled messages as you like. They run while the software is open.
+
 ## Install (for users)
 
 **Option A — Installer (recommended)**
 
-1. Download **`AR-WA-GROUP-MESSAGE-FORWARD-Setup-2.1.0.exe`** from the
+1. Download **`AR-WA-GROUP-MESSAGE-FORWARD-Setup-2.2.0.exe`** from the
    [latest release](https://github.com/ariful66541/ar-wa-group-message-forward/releases/latest).
 2. Run it. If Windows shows *"Windows protected your PC"*, click **More info → Run anyway**
    (the build has no paid code-signing certificate).
