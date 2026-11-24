@@ -320,6 +320,7 @@ async function init() {
       logLine('Starting WhatsApp…');
       const s = await API.startWhatsApp();
       setWaBadge(s.status);
+      setConnLine(s.status);
     } catch (e) {
       logLine(e.message, 'err');
       setWaBadge('error');
@@ -329,7 +330,14 @@ async function init() {
   $('btnLogout').onclick = async () => {
     await API.stopWhatsApp();
     setWaBadge('stopped');
+    setConnLine('stopped');
+    $('qrBox').innerHTML = '<div class="ph">QR code will appear here</div>';
+    $('qrHint').innerHTML = 'Press <b>Connect WhatsApp</b> to get the code.';
     logLine('WhatsApp stopped. The saved login stays on this PC.', 'warn');
+  };
+
+  $('btnOpenWa').onclick = async () => {
+    try { await API.focusWhatsApp(); } catch (e) { logLine(e.message, 'err'); }
   };
 
   $('btnReload').onclick = loadGroups;
@@ -396,22 +404,27 @@ async function init() {
   API.on('wa-state', (s) => {
     state.wa = s;
     setWaBadge(s.status);
+    setConnLine(s.status);
     if (s.qr) showQr(s.qr);
     if (s.engine) logLine('Engine: ' + (s.engine === 'ui' ? 'built-in' : 'standard'));
     if (s.status === 'ready') {
       const who = s.info ? ` as ${s.info.pushname} (+${s.info.number})` : '';
       $('waStatusLine').innerHTML = `Connected${esc(who)}. Choose your groups below.`;
       $('qrBox').innerHTML = '<div class="ph" style="color:#15803d;font-weight:700">✓ Connected</div>';
+      $('qrHint').innerHTML = 'Connected — the QR code is no longer needed.';
       loadGroups();
     }
     if (s.status === 'qr') {
       $('waStatusLine').innerHTML = 'Scan this QR code: WhatsApp → <b>Linked devices</b> → <b>Link a device</b>.';
+      $('qrHint').innerHTML = 'Scan this with your phone: <b>WhatsApp → Linked devices → Link a device</b>.';
     }
+    if (s.status === 'loading') $('qrHint').innerHTML = 'Getting the QR code…';
     if (s.status === 'error' && s.error) {
       $('waStatusLine').innerHTML = 'Error: ' + esc(s.error);
     }
     if (s.status === 'stopped') {
       $('qrBox').innerHTML = '<div class="ph">QR code will appear here</div>';
+      $('qrHint').innerHTML = 'Press <b>Connect WhatsApp</b> to get the code.';
     }
   });
 
@@ -431,6 +444,24 @@ async function init() {
 
 function showQr(dataUrl) {
   $('qrBox').innerHTML = `<img src="${dataUrl}" alt="WhatsApp QR code">`;
+}
+
+/** the little line above the buttons: Not connected / Waiting for QR / Connected */
+function setConnLine(status) {
+  const box = $('connState') && $('connState').parentElement;
+  const label = {
+    stopped: 'Not connected',
+    loading: 'Starting WhatsApp…',
+    qr: 'Waiting for you to scan the QR code',
+    authenticated: 'Logging in…',
+    ready: 'Connected',
+    error: 'Error — try again'
+  }[status] || 'Not connected';
+  if ($('connState')) $('connState').textContent = label;
+  if (box) {
+    box.classList.toggle('on', status === 'ready');
+    box.classList.toggle('wait', ['loading', 'qr', 'authenticated'].includes(status));
+  }
 }
 
 function applySettings(s) {

@@ -439,6 +439,10 @@ ipcMain.handle('wa:stop', async () => {
   return e.status();
 });
 ipcMain.handle('wa:state', async () => (engine ? engine.status() : { status: 'stopped', info: null, qr: null }));
+ipcMain.handle('wa:focus', async () => {
+  if (engine) engine.focus();
+  return true;
+});
 ipcMain.handle('wa:groups', async () => getGroups());
 
 ipcMain.handle('settings:get', async () => publicSettings());

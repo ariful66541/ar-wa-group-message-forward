@@ -122,6 +122,26 @@
   .split{display:flex;flex-direction:column;gap:10px}
   .split>*{flex:none;width:100%}
   .qrwrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+
+  /* 1 · connection: buttons on the left, QR code on the right */
+  .conngrid{display:grid;grid-template-columns:1fr 290px;gap:18px;align-items:start}
+  .conngrid>.connleft{align-self:stretch}
+  .connleft{min-width:0;display:flex;flex-direction:column}
+  .connleft .statrow{margin-top:auto}
+  .connleft .steps{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;font-size:11.5px;color:var(--muted);line-height:1.9}
+  .connleft .steps b{color:#cfe0f3}
+  .connright{border-left:1px solid var(--line);padding-left:18px;display:flex;flex-direction:column;align-items:center}
+  .qrhead{font-size:10.5px;font-weight:800;letter-spacing:1.4px;color:var(--muted);margin-bottom:9px;text-align:center}
+  .qrhint{font-size:11.5px;color:var(--muted);text-align:center;margin-top:9px;line-height:1.5;min-height:32px}
+  .connstatus{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:9px 13px;margin-bottom:10px;font-size:12.5px;font-weight:700}
+  .connstatus .dot{width:9px;height:9px;border-radius:50%;background:#64748b;flex:none}
+  .connstatus.on .dot{background:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+  .connstatus.on{color:#86efac;border-color:rgba(34,197,94,.4)}
+  .connstatus.wait .dot{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.18)}
+  .connstatus.wait{color:#fcd34d;border-color:rgba(245,158,11,.4)}
+  @media (max-width:820px){.conngrid{grid-template-columns:1fr}
+    .connright{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:14px}}
 </style>
 </head>
 <body>
@@ -147,19 +167,40 @@
   <section>
     <div class="card">
       <h2>1 · WhatsApp connection</h2>
-      <div class="split">
-        <div>
-          <div class="statrow" style="margin-bottom:10px">
+      <div class="conngrid">
+        <!-- LEFT: the buttons -->
+        <div class="connleft">
+          <div class="connstatus">
+            <span class="dot" id="connDot"></span>
+            <span id="connState">Not connected</span>
+          </div>
+          <div class="statusline tight" id="waStatusLine" style="margin-bottom:12px">Press <b>Connect WhatsApp</b> — the QR code appears on the right.
+            Scan it with your phone (WhatsApp → <b>Linked devices</b> → <b>Link a device</b>).
+            <br><b>Nothing to install:</b> no Chrome, no ChromeDriver, no extra software — it works on every Windows 10/11 PC.
+            <br>Your login is stored on this PC, so next time it connects automatically.</div>
+          <div class="steps">
+            <b>How to connect</b><br>
+            1 · Press <b>Connect WhatsApp</b><br>
+            2 · Open WhatsApp on your phone → <b>Linked devices</b> → <b>Link a device</b><br>
+            3 · Scan the QR code on the right<br>
+            4 · Press <b>Disconnect</b> any time to stop WhatsApp in this software
+          </div>
+          <div class="statrow">
             <button class="btn-primary" id="btnConnect">Connect WhatsApp</button>
             <button class="btn-ghost" id="btnLogout">Disconnect</button>
           </div>
-          <div class="statusline tight" id="waStatusLine">Click <b>Connect WhatsApp</b> — WhatsApp opens in its own window inside
-            this software. Scan the QR code with your phone (WhatsApp → Linked devices → Link a device), then close that window.
-            <br><b>Nothing to install:</b> no Chrome, no ChromeDriver, no extra software — it works on every Windows 10/11 PC.
-            <br>Your login is stored on this PC, so next time it connects automatically.</div>
         </div>
-        <div class="qrwrap">
-          <div class="qrbox" id="qrBox"><div class="ph">QR code will appear here</div></div>
+
+        <!-- RIGHT: the QR code -->
+        <div class="connright">
+          <div class="qrhead">QR CODE</div>
+          <div class="qrwrap">
+            <div class="qrbox" id="qrBox"><div class="ph">QR code will appear here</div></div>
+          </div>
+          <div class="qrhint" id="qrHint">Press <b>Connect WhatsApp</b> to get the code.</div>
+          <div class="statrow" style="margin-top:10px">
+            <button class="btn-ghost" id="btnOpenWa">Open WhatsApp window</button>
+          </div>
         </div>
       </div>
     </div>

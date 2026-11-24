@@ -33,6 +33,13 @@ class WaEngine extends EventEmitter {
     return { status: this.state, info: this.info, qr: this.qr, engine: this.engine };
   }
 
+  /** bring the WhatsApp window back to the front */
+  focus() {
+    try {
+      if (this.manual && typeof this.manual.focus === 'function') this.manual.focus();
+    } catch (e) { /* ignore */ }
+  }
+
   _set(state, extra = {}) {
     this.state = state;
     this.emit('state', { ...this.status(), ...extra });
