@@ -1,5 +1,7 @@
 # AR WA GROUP MESSAGE FORWARD
 
+**SMART WHATSAPP MESSAGE FORWARDING SOFTWARE**
+
 A smart and efficient **WhatsApp Group Message Forwarding Software** for Windows.
 It reads new messages from one **source group** and sends the **exact same text** to one
 or many **target groups** — automatically, on a daily schedule.
@@ -29,7 +31,7 @@ Phone: +880 1307-432200 · Email: arifulislam4390@gmail.com
 
 | File | What it is |
 |---|---|
-| `AR-WA-GROUP-MESSAGE-FORWARD-Setup-1.9.1.exe` | Installer — installs the app and puts a shortcut on the desktop |
+| `AR-WA-GROUP-MESSAGE-FORWARD-Setup-1.9.2.exe` | Installer — installs the app and puts a shortcut on the desktop |
 | `AR-WhatsApp-Forwarder-Windows.zip` | Portable build — unzip and run, nothing to install |
 
 Both are on the [Releases](https://github.com/ariful66541/ar-wa-group-message-forward/releases) page.
@@ -44,7 +46,7 @@ Both are on the [Releases](https://github.com/ariful66541/ar-wa-group-message-fo
 
 **Option A — Installer (recommended)**
 
-1. Download **`AR-WA-GROUP-MESSAGE-FORWARD-Setup-1.9.1.exe`** from the
+1. Download **`AR-WA-GROUP-MESSAGE-FORWARD-Setup-1.9.2.exe`** from the
    [latest release](https://github.com/ariful66541/ar-wa-group-message-forward/releases/latest).
 2. Run it. If Windows shows *"Windows protected your PC"*, click **More info → Run anyway**
    (the build has no paid code-signing certificate).

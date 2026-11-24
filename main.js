@@ -454,7 +454,7 @@ function showAppWindow() {
     height: 800,
     minWidth: 1024,
     minHeight: 700,
-    title: 'AR WA GROUP MESSAGE FORWARD',
+    title: 'AR WA GROUP MESSAGE FORWARD — Smart WhatsApp Message Forwarding Software',
     backgroundColor: '#0b1220',
     autoHideMenuBar: true,
     webPreferences: {
