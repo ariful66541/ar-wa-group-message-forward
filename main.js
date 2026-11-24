@@ -390,6 +390,7 @@ const APP_PASSWORD = '66542';
 const UNLOCK_FILE = () => path.join(app.getPath('userData'), 'unlocked.json');
 const UNLOCK_HOURS = 12;
 let unlockedThisRun = false;
+let swappingWindow = false;
 
 function samePassword(a, b) {
   const x = Buffer.from(String(a));
@@ -435,13 +436,25 @@ ipcMain.handle('lock:submit', async (event, password) => {
 // Window
 // ---------------------------------------------------------------------------
 function createWindow() {
+  if (unlockedRecently()) {
+    unlockedThisRun = true;
+    showAppWindow();
+  } else {
+    showLockWindow();
+  }
+}
+
+/** the real app window */
+function showAppWindow() {
+  swappingWindow = true;
+  if (mainWindow) { try { mainWindow.destroy(); } catch (e) {} mainWindow = null; }
   mainWindow = new BrowserWindow({
     icon: path.join(__dirname, 'build', 'icon.ico'),
     width: 1150,
     height: 800,
     minWidth: 1024,
     minHeight: 700,
-    title: 'AR WhatsApp Group Message Forwarder',
+    title: 'AR WA GROUP MESSAGE FORWARD',
     backgroundColor: '#0b1220',
     autoHideMenuBar: true,
     webPreferences: {
@@ -450,12 +463,8 @@ function createWindow() {
       nodeIntegration: false
     }
   });
-  if (unlockedRecently()) {
-    unlockedThisRun = true;
-    mainWindow.loadFile(path.join(__dirname, 'app', 'index.html'));
-  } else {
-    loadLockPage();
-  }
+  mainWindow.loadFile(path.join(__dirname, 'app', 'index.html'));
+  mainWindow.once('ready-to-show', () => { swappingWindow = false; });
   // keep the layout at 100% zoom, whatever the last zoom level was
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.webContents.setZoomFactor(1);
@@ -463,13 +472,13 @@ function createWindow() {
   mainWindow.on('closed', () => { mainWindow = null; });
 }
 
-function loadLockPage() {
-  const bounds = mainWindow ? mainWindow.getBounds() : null;
-  if (mainWindow) { mainWindow.destroy(); mainWindow = null; }
-  const opts = {
+function showLockWindow() {
+  swappingWindow = true;
+  if (mainWindow) { try { mainWindow.destroy(); } catch (e) {} mainWindow = null; }
+  mainWindow = new BrowserWindow({
     icon: path.join(__dirname, 'build', 'icon.ico'),
     width: 420,
-    height: 470,
+    height: 480,
     resizable: false,
     maximizable: false,
     title: 'AR WA GROUP MESSAGE FORWARD — Locked',
@@ -480,22 +489,15 @@ function loadLockPage() {
       contextIsolation: true,
       nodeIntegration: false
     }
-  };
-  if (bounds) { opts.width = Math.min(420, bounds.width); opts.height = Math.min(470, bounds.height); }
-  mainWindow = new BrowserWindow(opts);
+  });
   mainWindow.setMenuBarVisibility(false);
   mainWindow.loadFile(path.join(__dirname, 'app', 'lock.html'));
+  mainWindow.once('ready-to-show', () => { swappingWindow = false; });
   mainWindow.on('closed', () => { mainWindow = null; });
 }
 
 function openAppPage() {
-  const bounds = mainWindow ? mainWindow.getBounds() : null;
-  if (mainWindow) { mainWindow.destroy(); mainWindow = null; }
-  createWindow();
-  if (bounds && mainWindow) {
-    mainWindow.setSize(1150, 800);
-    mainWindow.center();
-  }
+  showAppWindow();
 }
 
 ipcMain.handle('lock:open', async () => { openAppPage(); return true; });
@@ -516,6 +518,9 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', async () => {
+  // the lock window and the app window are swapped while running;
+  // if every window is really gone, stop WhatsApp and exit
+  if (swappingWindow) return;
   try { if (engine) await engine.stop(); } catch (e) {}
   app.quit();
 });
