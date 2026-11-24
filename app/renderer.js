@@ -6,10 +6,14 @@ let groups = [];
 let state = { wa: { status: 'stopped' }, settings: null };
 
 /* ---------------------------------------------------------------- helpers */
+function each(id, fn) {
+  const one = $(id);
+  if (one) fn(one);
+  const two = $(id + '2');
+  if (two) fn(two);
+}
+
 function setWaBadge(status) {
-  const dot = $('waDot');
-  const txt = $('waText');
-  dot.className = 'dot';
   const map = {
     ready: ['on', 'WhatsApp: connected'],
     qr: ['warn', 'WhatsApp: scan QR code'],
@@ -21,17 +25,18 @@ function setWaBadge(status) {
     stopped: ['', 'WhatsApp: not connected']
   };
   const [cls, label] = map[status] || ['', 'WhatsApp: ' + status];
-  if (cls) dot.classList.add(cls);
-  txt.textContent = label;
+  // the badge is shown twice: in the sidebar and in the hero header
+  ['waDot', 'waDot2'].forEach((id) => { const d = $(id); if (d) { d.className = 'dot'; if (cls) d.classList.add(cls); } });
+  ['waText', 'waText2'].forEach((id) => { const t = $(id); if (t) t.textContent = label; });
   $('btnConnect').disabled = ['loading', 'qr', 'authenticated', 'ready'].includes(status);
   $('btnLogout').disabled = status === 'stopped';
   $('btnReload').disabled = status !== 'ready';
 }
 
 function setSchedBadge(active, text) {
-  const dot = $('schedDot');
-  dot.className = 'dot ' + (active ? 'on' : '');
-  $('schedText').textContent = (active ? 'Active now · ' : 'Waiting · ') + (text || '09:50 – 16:28');
+  const label = (active ? 'Active now · ' : 'Waiting · ') + (text || '09:50 – 16:28');
+  ['schedDot', 'schedDot2'].forEach((id) => { const d = $(id); if (d) d.className = 'dot ' + (active ? 'on' : ''); });
+  ['schedText', 'schedText2'].forEach((id) => { const t = $(id); if (t) t.textContent = label; });
 
   // the same information inside 3 · Schedule & safety
   const win = text || '09:50 – 16:28';
@@ -113,12 +118,12 @@ const PAGES = ['conn', 'work', 'sched', 'result', 'about'];
 function showPage(name) {
   const which = PAGES.includes(name) ? name : 'conn';
   document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + which));
-  document.querySelectorAll('.wtab').forEach((b) => b.classList.toggle('active', b.dataset.page === which));
+  document.querySelectorAll('.snav').forEach((b) => b.classList.toggle('active', b.dataset.page === which));
   window.scrollTo(0, 0);
   try { localStorage.setItem('lastPage', which); } catch (e) {}
 }
 
-/* the top bar has two slides of buttons; this shows the one asked for */
+/* kept for older saved layouts; the sidebar replaced the slide buttons */
 function showSlide(n) {
   const which = n === 2 ? 2 : 1;
   const s1 = $('slide1');
@@ -130,22 +135,15 @@ function showSlide(n) {
   try { localStorage.setItem('lastSlide', String(which)); } catch (e) {}
 }
 
-/** the slide that holds the page we are on */
-function slideOf(page) {
-  return ['result', 'about'].includes(page) ? 2 : 1;
-}
-
 function wirePages() {
-  document.querySelectorAll('.wtab, .aboutbtn').forEach((btn) => {
+  // step 2: the left navigation drives the pages
+  document.querySelectorAll('.snav').forEach((btn) => {
     if (!btn.dataset.page) return;
-    btn.onclick = () => { showPage(btn.dataset.page); showSlide(slideOf(btn.dataset.page)); };
+    btn.onclick = () => showPage(btn.dataset.page);
   });
-  if ($('slidePrev')) $('slidePrev').onclick = () => showSlide(1);
-  if ($('slideNext')) $('slideNext').onclick = () => showSlide(2);
   let last = 'conn';
   try { last = localStorage.getItem('lastPage') || 'conn'; } catch (e) {}
   showPage(last);
-  showSlide(slideOf(last));
 }
 
 /* ------------------------------------------------------- scheduled messages */
@@ -393,6 +391,14 @@ async function init() {
 
   // the page buttons are wired first, before anything that can fail
   wirePages();
+
+  $('btnScanQr').onclick = async () => {
+    // bring the WhatsApp window (where the code is scanned) back to the front
+    try {
+      await API.focusWhatsApp();
+      logLine('WhatsApp window brought to the front — scan the QR code there.');
+    } catch (e) { logLine(e.message, 'err'); }
+  };
 
   $('btnOpenWa').onclick = async () => {
     try { await API.focusWhatsApp(); } catch (e) { logLine(e.message, 'err'); }
