@@ -32,6 +32,18 @@ function setSchedBadge(active, text) {
   const dot = $('schedDot');
   dot.className = 'dot ' + (active ? 'on' : '');
   $('schedText').textContent = (active ? 'Active now · ' : 'Waiting · ') + (text || '09:50 – 16:28');
+
+  // the same information inside 3 · Schedule & safety
+  const win = text || '09:50 – 16:28';
+  if ($('schedWindow')) $('schedWindow').textContent = win;
+  if ($('schedNow')) {
+    const n = new Date();
+    $('schedNow').textContent = String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+  }
+  if ($('schedOn')) {
+    $('schedOn').textContent = active ? 'ACTIVE' : 'WAITING';
+    $('schedOn').className = active ? 'on' : 'off';
+  }
 }
 
 function logLine(msg, level) {
