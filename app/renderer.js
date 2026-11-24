@@ -107,6 +107,24 @@ function updateCounts() {
 
 function updateTargetCount() { updateCounts(); }
 
+/* ------------------------------------------------------------- pages */
+function showPage(name) {
+  const which = name === 'work' ? 'work' : 'conn';
+  document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + which));
+  document.querySelectorAll('.wtab').forEach((b) => b.classList.toggle('active', b.dataset.page === which));
+  window.scrollTo(0, 0);
+  try { localStorage.setItem('lastPage', name === 'work' ? 'work' : 'conn'); } catch (e) {}
+}
+
+function wirePages() {
+  document.querySelectorAll('.wtab').forEach((btn) => {
+    btn.onclick = () => showPage(btn.dataset.page);
+  });
+  let last = 'conn';
+  try { last = localStorage.getItem('lastPage') || 'conn'; } catch (e) {}
+  showPage(last);
+}
+
 /* ------------------------------------------------------- scheduled messages */
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -317,6 +335,8 @@ function renderHistory(hist) {
 
 /* ---------------------------------------------------------------- init */
 async function init() {
+  wirePages();                       // first, so the two pages always work
+
   state.settings = await API.getSettings();
   applySettings(state.settings);
 
@@ -347,6 +367,9 @@ async function init() {
     $('qrHint').innerHTML = 'Press <b>Connect WhatsApp</b> to get the code.';
     logLine('WhatsApp stopped. The saved login stays on this PC.', 'warn');
   };
+
+  // the page buttons are wired first, before anything that can fail
+  wirePages();
 
   $('btnOpenWa').onclick = async () => {
     try { await API.focusWhatsApp(); } catch (e) { logLine(e.message, 'err'); }
@@ -425,6 +448,7 @@ async function init() {
       $('qrBox').innerHTML = '<div class="ph" style="color:#15803d;font-weight:700">✓ Connected</div>';
       $('qrHint').innerHTML = 'Connected — the QR code is no longer needed.';
       loadGroups();
+      if (!state.groupsLoadedOnce) { state.groupsLoadedOnce = true; showPage('work'); }
     }
     if (s.status === 'qr') {
       $('waStatusLine').innerHTML = 'Scan this QR code: WhatsApp → <b>Linked devices</b> → <b>Link a device</b>.';
