@@ -12,7 +12,7 @@
   *{box-sizing:border-box}
   body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
   header{display:flex;align-items:center;gap:12px;flex-wrap:nowrap;padding:12px 20px;background:linear-gradient(90deg,#0d1a2e,#123253);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
-  .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#0ea5e9);display:grid;place-items:center;font-weight:800;color:#04121f;font-size:15px}
+  .logo{width:44px;height:44px;flex:none;background:url("logo.png") center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(34,197,94,.55))}
   h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.2px}
   .sub{font-size:11.5px;color:var(--muted)}
   .h1a{display:block;font-size:17px;font-weight:800;letter-spacing:2.5px;line-height:1.1;color:#e8f5ff}
@@ -88,7 +88,7 @@
   .hint{font-size:11.5px;color:var(--muted);margin-top:6px}
   .aboutcard{background:linear-gradient(160deg,#122540,#0e1a2c);border-color:#24405f}
   .abouthead{display:flex;align-items:center;gap:14px;margin-bottom:14px}
-  .logo.big{width:52px;height:52px;border-radius:14px;font-size:17px;flex:none}
+  .logo.big{width:60px;height:60px;flex:none}
   .abouttitle{font-size:15px;margin:0;color:#fff;letter-spacing:.5px}
   .aboutsub{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
   .aboutgrid{display:flex;flex-direction:column;gap:8px}
@@ -104,7 +104,7 @@
 </head>
 <body>
 <header>
-  <div class="logo">AR</div>
+  <div class="logo" role="img" aria-label="AR WA logo"></div>
   <div>
     <h1><span class="h1a">AR WA</span><span class="h1b">GROUP MESSAGE FORWARD</span></h1>
     <div class="slogan">SMART WHATSAPP MESSAGE FORWARDING SOFTWARE</div>
@@ -210,7 +210,7 @@
   <section>
     <div class="card aboutcard">
       <div class="abouthead">
-        <div class="logo big">AR</div>
+        <div class="logo big" role="img" aria-label="AR WA logo"></div>
         <div>
           <h2 class="abouttitle"><span class="h1a">AR WA</span><span class="h1b">GROUP MESSAGE FORWARD</span></h2>
           <div class="aboutsub">SMART WHATSAPP MESSAGE FORWARDING SOFTWARE</div>
