@@ -421,14 +421,14 @@ ipcMain.handle('lock:submit', async (event, password) => {
   await new Promise((r) => setTimeout(r, 350));           // slow down guessing
   if (!samePassword(password, APP_PASSWORD)) {
     lockTries++;
-    try { logLine('Wrong password entered on the lock screen.', 'warn'); } catch (e) {}
-    return false;
+    try { logLine('Wrong password (' + lockTries + ') on the lock screen.', 'warn'); } catch (e) {}
+    return { ok: false, tries: lockTries };
   }
   lockTries = 0;
   unlockedThisRun = true;
   rememberUnlock();
   try { logLine('App unlocked with password.'); } catch (e) {}
-  return true;
+  return { ok: true, tries: 0 };
 });
 
 // ---------------------------------------------------------------------------

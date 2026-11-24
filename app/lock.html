@@ -41,7 +41,7 @@
     <h1>AR WA GROUP MESSAGE FORWARD</h1>
     <div class="sub">This software is password protected.<br>Enter the password to open it.</div>
     <label for="pw">Password</label>
-    <input id="pw" type="password" inputmode="numeric" autocomplete="off" autofocus placeholder="•••••" />
+    <input id="pw" type="text" inputmode="numeric" autocomplete="off" autofocus placeholder="Enter password" />
     <button id="go">Unlock</button>
     <div class="err" id="err"></div>
     <div class="foot">Developed by Ariful Islam · +880 1307-432200</div>
@@ -56,7 +56,8 @@
     if (!value) { pw.focus(); return; }
     btn.disabled = true;
     btn.textContent = 'Checking…';
-    const ok = await window.lockAPI.submit(value);
+    const res = await window.lockAPI.submit(value);
+    const ok = !!(res && res.ok);
     if (ok) {
       err.textContent = '';
       btn.textContent = 'Opening…';

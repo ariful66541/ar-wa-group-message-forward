@@ -1,7 +1,7 @@
 {
   "name": "ar-whatsapp-forwarder",
   "productName": "AR WhatsApp Forwarder",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "private": true,
   "description": "AR WA GROUP MESSAGE FORWARD - WhatsApp group message forwarder: exact original text, text only, daily schedule, password protected.",
   "main": "main.js",
@@ -22,5 +22,49 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/ariful66541/ar-wa-group-message-forward.git"
+  },
+  "build": {
+    "appId": "com.arifulislam.arwamsgforward",
+    "productName": "AR WA GROUP MESSAGE FORWARD",
+    "copyright": "Copyright © 2026 Ariful Islam",
+    "directories": {
+      "output": "installer",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "manual-wa.js",
+      "wa-engine.js",
+      "preload.js",
+      "lock-preload.js",
+      "app/**/*",
+      "build/icon.*",
+      "README.txt",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "AR-WA-GROUP-MESSAGE-FORWARD-Setup-${version}.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AR WA GROUP MESSAGE FORWARD",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "deleteAppDataOnUninstall": false,
+      "license": "LICENSE"
+    }
   }
 }

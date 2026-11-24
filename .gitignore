@@ -1,9 +1,10 @@
 # dependencies
 node_modules/
 
-# build output (the EXE/ZIP is uploaded as a release asset instead)
+# build output (the installer / ZIP is uploaded as a release asset instead)
 release/
 dist/
+installer/
 
 # scratch
 *.log
