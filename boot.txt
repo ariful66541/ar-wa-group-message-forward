@@ -1,9 +1,0 @@
-state: loading
-start() returned, windows=1
-state: qr (qr 14 KB)
-log[warn]: QR code ready – scan it with WhatsApp on your phone.
-state: qr (qr 14 KB)
-log[warn]: QR code ready – scan it with WhatsApp on your phone.
-window title: WhatsApp
-probe: {"url":"https://web.whatsapp.com/login/","canvas":true,"pane":false,"body":"Download WhatsApp for Windows\nGet extra features like voice and video calling, screen sharing and more.\nDownload\nScan to"}
-stopped

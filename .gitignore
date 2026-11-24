@@ -9,3 +9,5 @@ installer/
 # scratch
 *.log
 unlocked.json
+boot.txt
+wa-probe.png
