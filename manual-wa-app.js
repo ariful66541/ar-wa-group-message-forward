@@ -338,10 +338,17 @@ class ManualWa {
   }
 
   // ------------------------------------------------------------- watching
-  setSourceName(name) {
-    const changed = this.sourceName !== (name || null);
-    this.sourceName = name || null;
-    if (changed && this.ready) this.onLog('Source group: ' + (this.sourceName || '(none selected)'));
+  /** one source group, or a list of them — every one of them is watched */
+  setSourceName(nameOrNames) {
+    const list = Array.isArray(nameOrNames)
+      ? nameOrNames.filter(Boolean).map(String)
+      : (nameOrNames ? [String(nameOrNames)] : []);
+    const changed = list.join('\u0000') !== (this.sourceNames || []).join('\u0000');
+    this.sourceNames = list;
+    this.sourceName = list[0] || null;          // kept for older callers
+    if (changed && this.ready) {
+      this.onLog('Watching source group' + (list.length > 1 ? 's' : '') + ': ' + (list.join(', ') || '(none selected)'));
+    }
   }
 
   _startWatching() {
@@ -385,21 +392,31 @@ class ManualWa {
     })()`);
   }
 
-  /** open the source chat so its messages are on screen, then read the newest incoming one */
+  /** which source group to look at on this turn (they take turns) */
+  _nextSource() {
+    const list = this.sourceNames || [];
+    if (!list.length) return null;
+    this.sourceIndex = ((this.sourceIndex || 0) + 1) % list.length;
+    return list[this.sourceIndex];
+  }
+
+  /** open one source chat so its messages are on screen, then read the newest incoming one */
   async _pollSource() {
-    if (!this._wc() || !this.sourceName || this.busy) return;
+    if (!this._wc() || this.busy) return;
+    const name = this._nextSource();
+    if (!name) return;
 
     const open = await this._js(`(() => {
-      const nm = ${JSON.stringify(String(this.sourceName || ''))};
+      const nm = ${JSON.stringify(String(name))};
       const el = [...document.querySelectorAll('[contenteditable="true"]')].find((e) => e.closest('footer'));
       const aria = el ? el.getAttribute('aria-label') || '' : '';
       return aria.toLowerCase().includes(nm.toLowerCase().slice(0, 12));
     })()`);
 
     if (!open) {
-      const ok = await this._openChat(this.sourceName);
+      const ok = await this._openChat(name);
       if (!ok) return;
-      await new Promise((r) => setTimeout(r, 1400));
+      await new Promise((r) => setTimeout(r, 1200));
     }
 
     const snap = await this._readLast();
@@ -411,7 +428,7 @@ class ManualWa {
 
     this.onMessage({
       id: snap.id,
-      from: this.sourceName,
+      from: name,
       body: snap.text,
       type: 'chat',
       hasMedia: false,

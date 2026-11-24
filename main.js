@@ -24,8 +24,8 @@ const SETTINGS_FILE = () => path.join(app.getPath('userData'), 'settings.json');
 const LOG_FILE = () => path.join(app.getPath('userData'), 'activity.log');
 
 const DEFAULT_SETTINGS = {
-  sourceGroup: null,      // { id, name }
-  targetGroups: [],       // [{ id, name }]
+  sourceGroups: [],       // [{ id, name }] — every one of them is read from
+  targetGroups: [],       // [{ id, name }] — every one of them receives
   schedule: { start: '09:50', end: '16:28' },
   dailyLimit: 0,          // 0 = unlimited
   perGroupDelay: 3,       // seconds between two target groups
@@ -34,6 +34,11 @@ const DEFAULT_SETTINGS = {
 };
 
 let settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+
+/** the first source group (kept for older code paths) */
+function firstSource() {
+  return (settings.sourceGroups && settings.sourceGroups[0]) || null;
+}
 
 function loadSettings() {
   try {
@@ -44,6 +49,13 @@ function loadSettings() {
       schedule: { ...DEFAULT_SETTINGS.schedule, ...(parsed.schedule || {}) },
       stats: { ...DEFAULT_SETTINGS.stats, ...(parsed.stats || {}) }
     };
+    // older versions saved one source group – turn it into the list
+    if ((!settings.sourceGroups || !settings.sourceGroups.length) && parsed.sourceGroup) {
+      settings.sourceGroups = [parsed.sourceGroup];
+    }
+    if (!Array.isArray(settings.sourceGroups)) settings.sourceGroups = [];
+    if (!Array.isArray(settings.targetGroups)) settings.targetGroups = [];
+    delete settings.sourceGroup;
   } catch (e) {
     settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
   }
@@ -113,7 +125,7 @@ function getEngine() {
     sendToUi('wa-state', s);
     if (s.status === 'ready') {
       // give the built-in engine the source group name for watching
-      if (engine.manual && settings.sourceGroup) engine.manual.setSourceName(settings.sourceGroup.name);
+      if (engine.manual) engine.manual.setSourceName(settings.sourceGroups.map((g) => g.name));
       refreshGroupNames().catch(() => {});
     }
   });
@@ -136,9 +148,9 @@ async function refreshGroupNames() {
   try {
     const groups = await e.groups();
     const byId = new Map(groups.map((g) => [g.id, g.name]));
-    if (settings.sourceGroup && byId.has(settings.sourceGroup.id)) {
-      settings.sourceGroup.name = byId.get(settings.sourceGroup.id);
-    }
+    settings.sourceGroups = settings.sourceGroups.map((g) =>
+      byId.has(g.id) ? { id: g.id, name: byId.get(g.id) } : g
+    );
     settings.targetGroups = settings.targetGroups.map((t) =>
       byId.has(t.id) ? { id: t.id, name: byId.get(t.id) } : t
     );
@@ -179,8 +191,10 @@ async function handleIncoming(msg) {
   if (msg.type !== 'chat') return;      // images, PDFs, video, audio, stickers blocked
   if (msg.hasMedia) return;
   if (msg.fromMe) return;
-  if (!settings.sourceGroup) return;
-  if (msg.from !== settings.sourceGroup.id && msg.from !== settings.sourceGroup.name) return;
+  const srcs = settings.sourceGroups || [];
+  if (!srcs.length) return;
+  const fromSource = srcs.some((g) => msg.from === g.id || msg.from === g.name);
+  if (!fromSource) return;
 
   const id = msg.id || `${msg.from}:${msg.body}`;
   if (seenMessageIds.has(id)) return;
@@ -233,7 +247,7 @@ async function handleIncoming(msg) {
 
   settings.forwardHistory.unshift({
     at: new Date().toISOString(),
-    source: settings.sourceGroup.name,
+    source: msg.from,
     targets: results,
     text: body,
     ok,
@@ -253,7 +267,7 @@ async function handleIncoming(msg) {
 // ---------------------------------------------------------------------------
 function publicSettings() {
   return {
-    sourceGroup: settings.sourceGroup,
+    sourceGroups: settings.sourceGroups,
     targetGroups: settings.targetGroups,
     schedule: settings.schedule,
     dailyLimit: settings.dailyLimit,
@@ -287,10 +301,13 @@ ipcMain.handle('settings:save', async (_e, patch) => {
     }
     settings.schedule = { start: patch.schedule.start, end: patch.schedule.end };
   }
-  if (patch.sourceGroup !== undefined) {
-    settings.sourceGroup = patch.sourceGroup;
-    if (engine && engine.manual) engine.manual.setSourceName(patch.sourceGroup ? patch.sourceGroup.name : null);
+  if (patch.sourceGroups !== undefined) {
+    settings.sourceGroups = Array.isArray(patch.sourceGroups) ? patch.sourceGroups : [];
+  } else if (patch.sourceGroup !== undefined) {
+    // older screen: a single source group
+    settings.sourceGroups = patch.sourceGroup ? [patch.sourceGroup] : [];
   }
+  if (engine && engine.manual) engine.manual.setSourceName(settings.sourceGroups.map((g) => g.name));
   if (patch.targetGroups !== undefined) settings.targetGroups = patch.targetGroups;
   if (patch.dailyLimit !== undefined) settings.dailyLimit = Math.max(0, Number(patch.dailyLimit) || 0);
   if (patch.perGroupDelay !== undefined) settings.perGroupDelay = Math.max(0, Number(patch.perGroupDelay) || 0);
@@ -349,7 +366,7 @@ ipcMain.handle('debug:check', async () => {
   }
   lines.push('Schedule: ' + scheduleText() + '  |  now: ' +
     new Date().toTimeString().slice(0, 5) + '  |  inside: ' + (isWithinSchedule() ? 'YES' : 'NO'));
-  if (!settings.sourceGroup) lines.push('-> No source group selected. Pick it in step 2 and press Save groups.');
+  if (!settings.sourceGroups.length) lines.push('-> No source group selected. Tick them in step 2 and press Save groups.');
   if (!settings.targetGroups.length) lines.push('-> No target group selected. Tick it in step 2 and press Save groups.');
   const limit = Number(settings.dailyLimit) || 0;
   lines.push('Daily: ' + dayCounter.count + ' of ' + (limit || 'unlimited') + ' used today.');
@@ -357,9 +374,9 @@ ipcMain.handle('debug:check', async () => {
     const groups = await e.groups();
     const names = groups.map((g) => g.name);
     lines.push('Visible chats: ' + names.slice(0, 12).join(' | '));
-    if (settings.sourceGroup) {
-      const hit = names.some((n) => n.toLowerCase() === settings.sourceGroup.name.toLowerCase());
-      lines.push('Source "' + settings.sourceGroup.name + '" found in the list: ' + (hit ? 'YES' : 'NO (scroll the list / open that chat once)'));
+    for (const g of settings.sourceGroups) {
+      const hit = names.some((n) => n.toLowerCase() === g.name.toLowerCase());
+      lines.push('Source "' + g.name + '" found in the list: ' + (hit ? 'YES' : 'NO (scroll the list / open that chat once)'));
     }
     for (const t of settings.targetGroups) {
       const hit = names.some((n) => n.toLowerCase() === t.name.toLowerCase());
@@ -369,7 +386,7 @@ ipcMain.handle('debug:check', async () => {
     lines.push('Could not read the chat list: ' + err.message);
   }
   try {
-    const last = await e.lastSourceSnapshot(settings.sourceGroup ? settings.sourceGroup.name : null);
+    const last = await e.lastSourceSnapshot(firstSource() ? firstSource().name : null);
     lines.push('Last message seen in source: ' + (last ? JSON.stringify(String(last.text || '').slice(0, 60)) + (last.own ? '  [own]' : '  [incoming]') + (last.media ? '  [media]' : '') : 'none'));
   } catch (err) {
     lines.push('Could not read the source chat: ' + err.message);

@@ -146,12 +146,14 @@
       <h2>2 · Groups</h2>
       <div class="warnbox">Messages are forwarded <b>exactly as received</b> — no added text, no prefix, no change to emoji, numbers or line breaks. Images, PDFs, videos, audio and stickers are <b>never</b> forwarded.</div>
       <div class="field">
-        <label>Source group (read messages from)</label>
-        <select id="sourceSel"><option value="">— connect WhatsApp first —</option></select>
+        <label>Source groups (read messages from) &nbsp;<span id="sourceCount" class="tag">0 selected</span></label>
+        <div class="list" id="sourceList"><div class="item" style="color:var(--muted)">— connect WhatsApp first —</div></div>
+        <div class="hint" style="margin-top:4px">Tick <b>one or more</b> groups — every message from every ticked group is forwarded.</div>
       </div>
       <div class="field">
         <label>Target groups (send to) &nbsp;<span id="targetCount" class="tag">0 selected</span></label>
         <div class="list" id="targetList"><div class="item" style="color:var(--muted)">— connect WhatsApp first —</div></div>
+        <div class="hint" style="margin-top:4px">Tick <b>one or more</b> groups — the message goes to every ticked group.</div>
       </div>
       <div class="row" style="margin-top:4px">
         <button class="btn-ghost" id="btnReload">Reload group list</button>

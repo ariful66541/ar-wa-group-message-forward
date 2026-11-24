@@ -49,36 +49,51 @@ function esc(s) {
 
 /* ---------------------------------------------------------------- groups */
 function renderGroups() {
-  const src = $('sourceSel');
-  const sel = state.settings && state.settings.sourceGroup ? state.settings.sourceGroup.id : '';
-  src.innerHTML = '<option value="">— choose the source group —</option>' +
-    groups.map((g) => `<option value="${esc(g.id)}" ${g.id === sel ? 'selected' : ''}>${esc(g.name)}</option>`).join('');
-
   const st = state.settings || {};
-  const targets = new Set((st.targetGroups || []).map((t) => t.id));
-  if (st.sourceGroup && st.sourceGroup.id) targets.add(st.sourceGroup.id);
-  const list = $('targetList');
+  const srcIds = new Set((st.sourceGroups || []).map((g) => g.id));
+  const tgtIds = new Set((st.targetGroups || []).map((g) => g.id));
+
+  const srcBox = $('sourceList');
+  const tgtBox = $('targetList');
+
   if (!groups.length) {
-    list.innerHTML = '<div class="item" style="color:var(--muted)">No groups found. Join the groups on WhatsApp first.</div>';
+    srcBox.innerHTML = '<div class="item" style="color:var(--muted)">No groups found. Join the groups on WhatsApp first.</div>';
+    tgtBox.innerHTML = '<div class="item" style="color:var(--muted)">No groups found. Join the groups on WhatsApp first.</div>';
+    $('sourceCount').textContent = '0 selected';
     $('targetCount').textContent = '0 selected';
     return;
   }
-  list.innerHTML = groups.map((g) => `
+
+  const row = (g, checked, tag) => `
     <label class="item">
-      <input type="checkbox" data-id="${esc(g.id)}" ${targets.has(g.id) ? 'checked' : ''}>
+      <input type="checkbox" data-id="${esc(g.id)}" ${checked ? 'checked' : ''}>
       <span class="nm">${esc(g.name)}</span>
-      ${st.sourceGroup && st.sourceGroup.id === g.id ? '<span class="tag">source</span>' : ''}
-    </label>`).join('');
-  list.querySelectorAll('input[type=checkbox]').forEach((cb) => {
-    cb.addEventListener('change', updateTargetCount);
-  });
-  updateTargetCount();
+      ${tag || ''}
+    </label>`;
+
+  srcBox.innerHTML = groups.map((g) => {
+    const alsoTarget = tgtIds.has(g.id) ? '<span class="tag">target</span>' : '';
+    return row(g, srcIds.has(g.id), alsoTarget);
+  }).join('');
+
+  tgtBox.innerHTML = groups.map((g) => {
+    const alsoSource = srcIds.has(g.id) ? '<span class="tag">source</span>' : '';
+    return row(g, tgtIds.has(g.id), alsoSource);
+  }).join('');
+
+  srcBox.querySelectorAll('input[type=checkbox]').forEach((cb) => cb.addEventListener('change', updateCounts));
+  tgtBox.querySelectorAll('input[type=checkbox]').forEach((cb) => cb.addEventListener('change', updateCounts));
+  updateCounts();
 }
 
-function updateTargetCount() {
-  const n = $('targetList').querySelectorAll('input[type=checkbox]:checked').length;
-  $('targetCount').textContent = n + ' selected';
+function updateCounts() {
+  const s = $('sourceList').querySelectorAll('input[type=checkbox]:checked').length;
+  const t = $('targetList').querySelectorAll('input[type=checkbox]:checked').length;
+  $('sourceCount').textContent = s + ' selected';
+  $('targetCount').textContent = t + ' selected';
 }
+
+function updateTargetCount() { updateCounts(); }
 
 /* ---------------------------------------------------------------- stats / history */
 function renderStats(stats) {
@@ -140,12 +155,12 @@ async function init() {
   $('btnReload').onclick = loadGroups;
 
   $('btnSaveGroups').onclick = async () => {
-    const srcId = $('sourceSel').value;
-    const sourceGroup = groups.find((g) => g.id === srcId) || null;
-    const ids = [...$('targetList').querySelectorAll('input[type=checkbox]:checked')].map((c) => c.dataset.id);
-    const targetGroups = ids.map((id) => groups.find((g) => g.id === id)).filter(Boolean);
-    state.settings = await API.saveSettings({ sourceGroup, targetGroups });
-    logLine(`Groups saved: source = ${sourceGroup ? sourceGroup.name : 'none'}, ${targetGroups.length} target group(s).`);
+    const srcIds = [...$('sourceList').querySelectorAll('input[type=checkbox]:checked')].map((c) => c.dataset.id);
+    const tgtIds = [...$('targetList').querySelectorAll('input[type=checkbox]:checked')].map((c) => c.dataset.id);
+    const sourceGroups = srcIds.map((id) => groups.find((g) => g.id === id)).filter(Boolean);
+    const targetGroups = tgtIds.map((id) => groups.find((g) => g.id === id)).filter(Boolean);
+    state.settings = await API.saveSettings({ sourceGroups, targetGroups });
+    logLine(`Groups saved: ${sourceGroups.length} source group(s) -> ${targetGroups.length} target group(s).`);
   };
 
   $('btnRecheck').onclick = async () => {

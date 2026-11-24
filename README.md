@@ -31,7 +31,7 @@ Phone: +880 1307-432200 · Email: arifulislam4390@gmail.com
 
 | File | What it is |
 |---|---|
-| `AR-WA-GROUP-MESSAGE-FORWARD-Setup-2.0.0.exe` | Installer — installs the app and puts a shortcut on the desktop |
+| `AR-WA-GROUP-MESSAGE-FORWARD-Setup-2.1.0.exe` | Installer — installs the app and puts a shortcut on the desktop |
 | `AR-WhatsApp-Forwarder-Windows.zip` | Portable build — unzip and run, nothing to install |
 
 Both are on the [Releases](https://github.com/ariful66541/ar-wa-group-message-forward/releases) page.
@@ -48,11 +48,19 @@ WhatsApp runs **inside the app's own window**. The software does not need Google
 Chrome, ChromeDriver, Node.js or any other program on the computer, so it behaves
 the same on every Windows 10/11 64-bit PC.
 
+## Many source groups, many target groups
+
+Step 2 has two tick lists:
+
+- **Source groups** — tick one or more. Every text message from every ticked group is forwarded.
+- **Target groups** — tick one or more. Each message goes to every ticked group, in order,
+  with the delay you set between groups.
+
 ## Install (for users)
 
 **Option A — Installer (recommended)**
 
-1. Download **`AR-WA-GROUP-MESSAGE-FORWARD-Setup-2.0.0.exe`** from the
+1. Download **`AR-WA-GROUP-MESSAGE-FORWARD-Setup-2.1.0.exe`** from the
    [latest release](https://github.com/ariful66541/ar-wa-group-message-forward/releases/latest).
 2. Run it. If Windows shows *"Windows protected your PC"*, click **More info → Run anyway**
    (the build has no paid code-signing certificate).
