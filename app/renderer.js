@@ -537,33 +537,4 @@ async function loadGroups() {
 
 init();
 
-/* ---------------------------------------------------------------- zoom */
-(function setupZoom() {
-  const base = Math.min(1, 1150 / Math.max(1, window.innerWidth));
-  const step = 0.05;
-  const apply = (z) => {
-    const v = Math.min(1.3, Math.max(0.55, Math.round(z * 100) / 100));
-    document.body.style.zoom = v;
-    current = v;
-    const el = document.getElementById('zoomLabel');
-    if (el) el.textContent = Math.round(v * 100) + '%';
-    try { localStorage.setItem('arzoom', String(v)); } catch (e) {}
-  };
-  let z = base;
-  try { const saved = localStorage.getItem('arzoom'); z = saved ? Number(saved) : base; } catch (e) { z = base; }
-  if (!z) z = base;
-  let current = z;
-  apply(z);
-  const btnIn = document.getElementById('zoomIn');
-  const btnOut = document.getElementById('zoomOut');
-  const btnReset = document.getElementById('zoomReset');
-  if (btnIn) btnIn.onclick = () => apply(current + step);
-  if (btnOut) btnOut.onclick = () => apply(current - step);
-  if (btnReset) btnReset.onclick = () => apply(1);
-  document.addEventListener('keydown', (e) => {
-    if (!e.ctrlKey) return;
-    if (e.key === '+' || e.key === '=') { e.preventDefault(); apply(current + step); }
-    if (e.key === '-') { e.preventDefault(); apply(current - step); }
-    if (e.key === '0') { e.preventDefault(); apply(1); }
-  });
-})();
+/* the page is shown at the normal size: no zoom controls, nothing remembered */
