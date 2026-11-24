@@ -108,18 +108,21 @@ function updateCounts() {
 function updateTargetCount() { updateCounts(); }
 
 /* ------------------------------------------------------------- pages */
+const PAGES = ['conn', 'work', 'sched', 'result', 'about'];
+
 function showPage(name) {
-  const which = name === 'work' ? 'work' : 'conn';
+  const which = PAGES.includes(name) ? name : 'conn';
   document.querySelectorAll('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + which));
   document.querySelectorAll('.wtab').forEach((b) => b.classList.toggle('active', b.dataset.page === which));
   window.scrollTo(0, 0);
-  try { localStorage.setItem('lastPage', name === 'work' ? 'work' : 'conn'); } catch (e) {}
+  try { localStorage.setItem('lastPage', which); } catch (e) {}
 }
 
 function wirePages() {
   document.querySelectorAll('.wtab').forEach((btn) => {
     btn.onclick = () => showPage(btn.dataset.page);
   });
+  if ($('btnAbout')) $('btnAbout').onclick = () => showPage('about');
   let last = 'conn';
   try { last = localStorage.getItem('lastPage') || 'conn'; } catch (e) {}
   showPage(last);

@@ -11,7 +11,7 @@
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
-  header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 20px;background:linear-gradient(90deg,#0d1a2e,#123253);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  header{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 16px;background:linear-gradient(90deg,#0d1a2e,#123253);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
   .logo{width:44px;height:44px;flex:none;background:url("logo.png") center/contain no-repeat;filter:drop-shadow(0 0 6px rgba(34,197,94,.55))}
   h1{font-size:16px;margin:0;font-weight:700;letter-spacing:.2px}
   .sub{font-size:11.5px;color:var(--muted)}
@@ -39,7 +39,7 @@
   .slogan{font-size:9px;letter-spacing:1.05px;font-weight:700;color:#7dd3fc;text-transform:uppercase;margin-top:3px;white-space:nowrap}
   header>div:nth-child(2){min-width:0;flex:1}
   .spacer{flex:1 1 0;min-width:0}
-  .spacer{flex:1}
+  .spacer{flex:1 1 0;min-width:0}
   .zbtn{background:transparent;color:#c9d8ea;border:1px solid transparent;border-radius:7px;padding:3px 8px;font-size:12px;font-weight:700;cursor:pointer}
   .zbtn:hover{background:#1d2f4a;border-color:var(--line)}
   .zbtn.reset{font-size:11px;font-weight:600;color:var(--muted)}
@@ -83,6 +83,10 @@
   .item .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tag{font-size:10.5px;padding:2px 7px;border-radius:6px;background:#1e3a5f;color:#9fc6f5;font-weight:600}
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .statsgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .btnrow{display:flex;gap:9px;flex-wrap:wrap}
+  .btnrow button{flex:1 1 180px}
+  @media (max-width:760px){.statsgrid{grid-template-columns:repeat(2,1fr)}}
   .statrow{display:flex;flex-direction:column;gap:9px}
   .statrow button{width:100%;text-align:center}
   .statrow .stat{display:flex;align-items:center;justify-content:space-between;padding:9px 13px}
@@ -118,16 +122,25 @@
   .avalue{font-size:13.5px;color:#e8eef7;font-weight:600;text-decoration:none;word-break:break-all;text-align:right}
   a.avalue:hover{color:#7dd3fc;text-decoration:underline}
   .aboutfoot{font-size:11.5px;color:var(--muted);text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .aboutinfo{font-size:12.5px;line-height:1.75;color:#cfe0f3}
+  .aboutinfo p{margin:0 0 10px}
+  .aboutinfo ul{margin:0;padding-left:18px;color:#b9cde4}
+  .aboutinfo li{margin-bottom:6px}
   .split{display:flex;flex-direction:column;gap:10px}
   .split>*{flex:none;width:100%}
   .qrwrap{display:flex;flex-direction:column;align-items:center;gap:8px}
 
   /* 1 · connection: buttons on the left, QR code on the right */
   /* two pages, switched by the buttons in the top bar */
-  .pagetabs{display:flex;gap:6px;background:rgba(255,255,255,.05);border:1px solid var(--line);
-    border-radius:11px;padding:4px}
-  .wtab{background:transparent;color:#9db2cc;font-size:12px;font-weight:700;padding:8px 15px;border-radius:8px;
+  .pagetabs{display:flex;gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--line);
+    border-radius:11px;padding:3px}
+  .wtab{background:transparent;color:#9db2cc;font-size:11.5px;font-weight:700;padding:7px 11px;border-radius:8px;
     white-space:nowrap}
+  .aboutbtn{background:var(--panel2);border:1px solid var(--line);color:#c9d8ea;font-size:11.5px;font-weight:700;
+    padding:7px 14px;border-radius:9px;white-space:nowrap}
+  .aboutbtn:hover{background:#1d2f4a}
+  .pill.small{padding:5px 9px;font-size:10.5px;gap:6px}
+  .pill.small .dot{width:7px;height:7px}
   .wtab:hover{color:#e8eef7;background:rgba(255,255,255,.06)}
   .wtab.active{background:var(--green);color:#052012}
   .page{display:none;flex-direction:column;gap:12px}
@@ -173,11 +186,14 @@
   </div>
   <div class="spacer"></div>
   <nav class="pagetabs" id="pageTabs">
-    <button class="wtab active" data-page="conn" id="tabConn">1 · WhatsApp connection</button>
-    <button class="wtab" data-page="work" id="tabWork">2 · Group forward &amp; schedule</button>
+    <button class="wtab active" data-page="conn" id="tabConn" title="WhatsApp connection">1 · WhatsApp connection</button>
+    <button class="wtab" data-page="work" id="tabWork" title="Group forward">2 · Group forward</button>
+    <button class="wtab" data-page="sched" id="tabSched" title="Auto scheduled messages">3 · Scheduled messages</button>
+    <button class="wtab" data-page="result" id="tabResult" title="Results and history">4 · Results &amp; history</button>
   </nav>
-  <div class="pill"><span class="dot" id="waDot"></span><span id="waText">WhatsApp: not connected</span></div>
-  <div class="pill"><span class="dot" id="schedDot"></span><span id="schedText">Schedule 09:50 – 16:28</span></div>
+  <button class="aboutbtn" id="btnAbout" title="About — my information">About</button>
+  <div class="pill small"><span class="dot" id="waDot"></span><span id="waText">WhatsApp: not connected</span></div>
+  <div class="pill small"><span class="dot" id="schedDot"></span><span id="schedText">Schedule 09:50 – 16:28</span></div>
 </header>
 
 <main>
@@ -272,6 +288,10 @@
       </div>
     </div>
 
+  </section>
+
+  <!-- ===================== PAGE 3: auto scheduled messages ===================== -->
+  <section class="page" id="page-sched">
     <div class="card">
       <h2>4 · Auto scheduled messages</h2>
       <div class="hint" style="margin-bottom:8px">Write a message once, choose the groups and the time — the software sends it by itself.
@@ -282,15 +302,19 @@
       </div>
     </div>
 
+  </section>
+
+  <!-- ===================== PAGE 4: results and history ===================== -->
+  <section class="page" id="page-result">
     <div class="card">
       <h2>Today</h2>
-      <div class="statrow">
+      <div class="statsgrid">
         <div class="stat"><b id="stFwd">0</b><span>sent</span></div>
         <div class="stat"><b id="stFail">0</b><span>failed</span></div>
         <div class="stat"><b id="stSkip">0</b><span>skipped</span></div>
         <div class="stat"><b id="stLast">—</b><span>last forward</span></div>
       </div>
-      <div class="statrow" style="margin-top:12px">
+      <div class="btnrow" style="margin-top:12px">
         <button class="btn-ghost" id="btnRecheck">Check now (why not forwarding?)</button>
         <button class="btn-ghost" id="btnResetStats">Reset counters</button>
         <button class="btn-ghost" id="btnLogFile">Open log file</button>
@@ -315,6 +339,28 @@
     <div class="card">
       <h2>Activity log</h2>
       <div id="log"></div>
+    </div>
+
+  </section>
+
+  <!-- ===================== PAGE 5: about ===================== -->
+  <section class="page" id="page-about">
+    <div class="card">
+      <h2>About this software</h2>
+      <div class="aboutinfo">
+        <p><b>AR WA — Group Message Forward</b> is a smart WhatsApp message forwarding software.
+        It reads new messages from the source groups you choose and sends the same text,
+        unchanged, to every target group you choose.</p>
+        <ul>
+          <li>The message goes out <b>exactly as received</b> — no added text, no prefix, no change to emoji, numbers or line breaks.</li>
+          <li><b>Images, PDFs, videos, audio and stickers are never forwarded</b> — text only.</li>
+          <li>Any number of <b>source groups</b> and <b>target groups</b>.</li>
+          <li>Forwarding runs only inside the daily <b>schedule window</b> (09:50 – 16:28 by default).</li>
+          <li><b>Auto scheduled messages</b>: write a message once, pick the groups, the time and the repeat, then press Start.</li>
+          <li>Everything runs inside this window — <b>no Chrome, no ChromeDriver, nothing extra to install</b>.</li>
+          <li>The software is <b>password protected</b>, and asks for the password every time it opens.</li>
+        </ul>
+      </div>
     </div>
 
     <div class="card aboutcard">
