@@ -388,7 +388,9 @@ const crypto = require('crypto');
 
 const APP_PASSWORD = '66542';
 const UNLOCK_FILE = () => path.join(app.getPath('userData'), 'unlocked.json');
-const UNLOCK_HOURS = 12;
+// The password is asked EVERY time the software is opened. Nothing is remembered
+// between runs; the unlock only lasts for this one run of the app.
+const UNLOCK_HOURS = 0;
 let unlockedThisRun = false;
 let swappingWindow = false;
 
@@ -399,16 +401,13 @@ function samePassword(a, b) {
 }
 
 function rememberUnlock() {
-  try { fs.writeFileSync(UNLOCK_FILE(), JSON.stringify({ at: Date.now() }), 'utf8'); } catch (e) {}
+  // do not write anything: every new start must ask for the password again
+  try { fs.unlinkSync(UNLOCK_FILE()); } catch (e) {}
 }
 
 function unlockedRecently() {
-  if (unlockedThisRun) return true;
-  try {
-    const raw = JSON.parse(fs.readFileSync(UNLOCK_FILE(), 'utf8'));
-    const age = Date.now() - Number(raw.at || 0);
-    return age >= 0 && age < UNLOCK_HOURS * 3600 * 1000;
-  } catch (e) { return false; }
+  // only this run counts; a saved unlock from an earlier start is ignored
+  return unlockedThisRun === true;
 }
 
 function forgetUnlock() {
@@ -510,6 +509,7 @@ app.on('second-instance', () => {
 });
 
 app.whenReady().then(() => {
+  try { fs.unlinkSync(UNLOCK_FILE()); } catch (e) {}   // old versions saved an unlock - ignore it
   loadSettings();
   createWindow();
   app.on('activate', () => {
