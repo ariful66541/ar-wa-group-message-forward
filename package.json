@@ -1,7 +1,7 @@
 {
   "name": "ar-whatsapp-forwarder",
   "productName": "AR WhatsApp Forwarder",
-  "version": "1.9.4",
+  "version": "1.9.5",
   "private": true,
   "description": "AR WA GROUP MESSAGE FORWARD - WhatsApp group message forwarder: exact original text, text only, daily schedule, password protected.",
   "main": "main.js",
